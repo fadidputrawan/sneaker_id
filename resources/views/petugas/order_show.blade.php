@@ -1,8 +1,8 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Detail Pesanan - Admin</title>
+    <title>Detail Pesanan - Petugas</title>
     <style>
         *{margin:0;padding:0;box-sizing:border-box;font-family:Arial,Helvetica,sans-serif}
         body{background:#f4f6f9;color:#333;min-height:100vh}
@@ -44,18 +44,17 @@
     <div class="sidebar">
         <div class="logo">SNEAKER ID</div>
         <div class="menu">
-            <a href="{{ route('admin.dashboard') }}" class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">Dashboard</a>
-            <a href="{{ route('admin.produk.index') }}" class="{{ request()->is('admin/produk*') ? 'active' : '' }}">Kelola Produk</a>
-            <a href="{{ route('admin.pesanan.index') }}" class="{{ request()->is('admin/pesanan*') ? 'active' : '' }}">Kelola Pesanan</a>
-            <a href="{{ route('admin.user.index') }}" class="{{ request()->is('admin/user*') ? 'active' : '' }}">Kelola User</a>
-            <a href="{{ route('admin.petugas.index') }}" class="{{ request()->is('admin/petugas*') ? 'active' : '' }}">Kelola Petugas</a>
+            <a href="{{ route('petugas.dashboard') }}" class="{{ request()->routeIs('petugas.dashboard') ? 'active' : '' }}">Dashboard</a>
+            <a href="{{ route('petugas.produk.index') }}" class="{{ request()->is('petugas/produk*') ? 'active' : '' }}">Kelola Produk</a>
+            <a href="{{ route('petugas.pesanan.index') }}" class="{{ request()->is('petugas/pesanan*') ? 'active' : '' }}">Kelola Pesanan</a>
+            <a href="{{ route('petugas.laporan') }}" class="{{ request()->routeIs('petugas.laporan') ? 'active' : '' }}">Laporan</a>
         </div>
     </div>
 
     <div class="main">
         <div class="topbar">
             <h2>Detail Pesanan</h2>
-            <div>Admin | <a class="logout" href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">Logout</a></div>
+            <div>Petugas | <a class="logout" href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">Logout</a></div>
         </div>
 
         @if(session('success'))
@@ -65,7 +64,7 @@
             <div class="alert error">{{ session('error') }}</div>
         @endif
 
-        <a class="back-link" href="{{ route('admin.pesanan.index') }}">← Kembali ke Daftar Pesanan</a>
+        <a class="back-link" href="{{ route('petugas.pesanan.index') }}">← Kembali ke Daftar Pesanan</a>
 
         <div class="card section">
             <h3>Informasi Pesanan</h3>
@@ -173,21 +172,21 @@
         </div>
 
         <div class="card section">
-            <h3>Aksi Admin</h3>
+            <h3>Aksi Petugas</h3>
             <div class="actions">
                 @if($order->status === 'diproses')
-                    <form action="{{ route('admin.order.status', $order->id) }}" method="POST">
+                    <form action="{{ route('petugas.order.status', $order->id) }}" method="POST">
                         @csrf
                         <input type="hidden" name="action" value="process">
                         <button type="submit" class="btn-action btn-primary">Kirim Pesanan</button>
                     </form>
-                    <form action="{{ route('admin.order.status', $order->id) }}" method="POST">
+                    <form action="{{ route('petugas.order.status', $order->id) }}" method="POST">
                         @csrf
                         <input type="hidden" name="action" value="cancel">
                         <button type="submit" class="btn-action btn-danger">Batalkan Pesanan</button>
                     </form>
                 @elseif($order->status === 'dikirim')
-                    <form action="{{ route('admin.order.status', $order->id) }}" method="POST">
+                    <form action="{{ route('petugas.order.status', $order->id) }}" method="POST">
                         @csrf
                         <input type="hidden" name="action" value="complete">
                         <button type="submit" class="btn-action btn-success">Tandai Selesai</button>

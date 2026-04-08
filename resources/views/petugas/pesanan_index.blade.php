@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 	<meta charset="UTF-8">
-	<title>Kelola Pesanan - Admin</title>
+	<title>Kelola Pesanan - Petugas</title>
 	<style>
 		*{margin:0;padding:0;box-sizing:border-box;font-family:Arial,Helvetica,sans-serif}
 		body{background:#f4f6f9;color:#333;min-height:100vh}
@@ -44,25 +44,31 @@
 	<div class="sidebar">
 		<div class="logo">SNEAKER ID</div>
 		<div class="menu">
-			<a href="{{ route('admin.dashboard') }}" class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">Dashboard</a>
-			<a href="{{ route('admin.produk.index') }}" class="{{ request()->is('admin/produk*') ? 'active' : '' }}">Kelola Produk</a>
-			<a href="{{ route('admin.pesanan.index') }}" class="{{ request()->is('admin/pesanan*') ? 'active' : '' }}">Kelola Pesanan</a>
-			<a href="{{ route('admin.user.index') }}" class="{{ request()->is('admin/user*') ? 'active' : '' }}">Kelola User</a>
-			<a href="{{ route('admin.petugas.index') }}" class="{{ request()->is('admin/petugas*') ? 'active' : '' }}">Kelola Petugas</a>
+			<a href="{{ route('petugas.dashboard') }}" class="{{ request()->routeIs('petugas.dashboard') ? 'active' : '' }}">Dashboard</a>
+			<a href="{{ route('petugas.produk.index') }}" class="{{ request()->is('petugas/produk*') ? 'active' : '' }}">Kelola Produk</a>
+			<a href="{{ route('petugas.pesanan.index') }}" class="{{ request()->routeIs('petugas.pesanan.*') ? 'active' : '' }}">Kelola Pesanan</a>
+			<a href="{{ route('petugas.laporan') }}" class="{{ request()->routeIs('petugas.laporan') ? 'active' : '' }}">Laporan</a>
 		</div>
 	</div>
 
 	<div class="main">
 		<div class="topbar">
 			<h2>Kelola Pesanan</h2>
-			<div>Admin | <a class="logout" href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">Logout</a></div>
+			<div>Petugas | <a class="logout" href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">Logout</a></div>
 		</div>
 
+		@if(session('success'))
+			<div class="alert success">{{ session('success') }}</div>
+		@endif
+		@if(session('error'))
+			<div class="alert error">{{ session('error') }}</div>
+		@endif
+
 		<div class="cards">
-			<div class="card"><h4>Total Produk</h4><p>{{ $totalProduk }}</p></div>
 			<div class="card"><h4>Total Pesanan</h4><p>{{ $totalPesanan }}</p></div>
-			<div class="card"><h4>Pendapatan</h4><p>Rp {{ number_format($pendapatan,0,',','.') }}</p></div>
-			<div class="card"><h4>User Aktif</h4><p>{{ $totalUser }}</p></div>
+			<div class="card"><h4>Diproses</h4><p>{{ $diproses }}</p></div>
+			<div class="card"><h4>Dikirim</h4><p>{{ $dikirim }}</p></div>
+			<div class="card"><h4>Selesai</h4><p>{{ $selesai }}</p></div>
 		</div>
 
 		<div class="table-box">
@@ -74,7 +80,7 @@
 				<tbody>
 				@foreach($orders as $o)
 					<tr>
-						<td><a href="{{ route('admin.order.show', $o->id) }}" style="text-decoration:none;color:#fff;">{{ $o->id }}</a></td>
+						<td>{{ str_pad($o->id, 3, '0', STR_PAD_LEFT) }}</td>
 						<td>{{ $o->user?->name ?? $o->nama }}</td>
 						<td>Rp {{ number_format($o->total,0,',','.') }}</td>
 						<td>{{ strtoupper($o->payment_method ?? 'N/A') }}</td>
@@ -87,20 +93,20 @@
 						@endif
 					</td>
 						<td>
-							<a href="{{ route('admin.order.show', $o->id) }}" class="btn-detail">Detail</a>
+							<a href="{{ route('petugas.order.show', $o->id) }}" class="btn-detail">Detail</a>
 							@if($o->status === 'diproses')
-								<form action="{{ route('admin.order.status', $o->id) }}" method="POST" class="inline-form">
+								<form action="{{ route('petugas.order.status', $o->id) }}" method="POST" class="inline-form">
 									@csrf
 									<input type="hidden" name="action" value="process">
 									<button type="submit" class="btn-action btn-primary">Kirim</button>
 								</form>
-								<form action="{{ route('admin.order.status', $o->id) }}" method="POST" class="inline-form">
+								<form action="{{ route('petugas.order.status', $o->id) }}" method="POST" class="inline-form">
 									@csrf
 									<input type="hidden" name="action" value="cancel">
 									<button type="submit" class="btn-action btn-danger">Batalkan</button>
 								</form>
 							@elseif($o->status === 'dikirim')
-								<form action="{{ route('admin.order.status', $o->id) }}" method="POST" class="inline-form">
+								<form action="{{ route('petugas.order.status', $o->id) }}" method="POST" class="inline-form">
 									@csrf
 									<input type="hidden" name="action" value="complete">
 									<button type="submit" class="btn-action btn-success">Selesai</button>

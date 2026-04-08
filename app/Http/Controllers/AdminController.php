@@ -66,7 +66,7 @@ class AdminController extends Controller
         }
 
         if ($action === 'cancel' && !in_array($order->status, ['selesai', 'dibatalkan'])) {
-            $order->update(['status' => 'dibatalkan']);
+            $order->update(['status' => 'dibatalkan', 'cancelled_by' => 'admin']);
             return back()->with('success', 'Pesanan berhasil dibatalkan.');
         }
 
@@ -97,6 +97,12 @@ class AdminController extends Controller
             'stok' => 'required|integer|min:0',
             'brand' => 'nullable|string|max:255',
             'deskripsi' => 'nullable|string',
+            'stok_39' => 'nullable|integer|min:0',
+            'stok_40' => 'nullable|integer|min:0',
+            'stok_41' => 'nullable|integer|min:0',
+            'stok_42' => 'nullable|integer|min:0',
+            'stok_43' => 'nullable|integer|min:0',
+            'stok_44' => 'nullable|integer|min:0',
             'images' => 'required|array|min:5',
             'images.*' => 'required|image|mimes:jpeg,png,jpg,gif|max:5120', // 5MB max
         ]);
@@ -105,12 +111,20 @@ class AdminController extends Controller
         $imagePaths = [];
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $image) {
-                if ($image) {
+                if ($image && $image->isValid()) {
                     $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
-                    $image->storeAs('public/products', $imageName);
-                    $imagePaths[] = 'products/' . $imageName;
+                    // Store to public disk so images are accessible via web
+                    $path = Storage::disk('public')->putFileAs('products', $image, $imageName);
+                    if ($path) {
+                        $imagePaths[] = $path;
+                    }
                 }
             }
+        }
+
+        // Ensure we have at least 5 images
+        if (count($imagePaths) < 5) {
+            return redirect()->back()->with('error', 'Minimal 5 foto harus berhasil diupload!');
         }
 
         Product::create([
@@ -118,7 +132,14 @@ class AdminController extends Controller
             'harga' => $request->harga,
             'stok' => $request->stok,
             'brand' => $request->brand,
-            'images' => json_encode($imagePaths), // Store all images as JSON
+            'deskripsi' => $request->deskripsi,
+            'images' => $imagePaths, // Store as array (will be cast to JSON automatically)
+            'stok_39' => $request->stok_39 ?? 0,
+            'stok_40' => $request->stok_40 ?? 0,
+            'stok_41' => $request->stok_41 ?? 0,
+            'stok_42' => $request->stok_42 ?? 0,
+            'stok_43' => $request->stok_43 ?? 0,
+            'stok_44' => $request->stok_44 ?? 0,
         ]);
 
         return redirect()->route('admin.produk.index')->with('success', 'Produk berhasil ditambahkan!');
@@ -134,28 +155,42 @@ class AdminController extends Controller
             'stok' => 'required|integer|min:0',
             'brand' => 'nullable|string|max:255',
             'deskripsi' => 'nullable|string',
+            'stok_39' => 'nullable|integer|min:0',
+            'stok_40' => 'nullable|integer|min:0',
+            'stok_41' => 'nullable|integer|min:0',
+            'stok_42' => 'nullable|integer|min:0',
+            'stok_43' => 'nullable|integer|min:0',
+            'stok_44' => 'nullable|integer|min:0',
             'images' => 'nullable|array|min:5',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
         ]);
 
-        $imagePaths = json_decode($product->images ?? '[]', true) ?: [];
+        $imagePaths = is_array($product->images) ? $product->images : (json_decode($product->images ?? '[]', true) ?: []);
 
         // Handle new image uploads
         if ($request->hasFile('images')) {
-            // Delete old images if new ones are uploaded
-            if (!empty($imagePaths)) {
-                foreach ($imagePaths as $oldImage) {
-                    Storage::delete('public/' . $oldImage);
+            $uploadedFiles = array_filter($request->file('images'));
+            
+            if (count($uploadedFiles) >= 5) {
+                // Delete old images if new ones are uploaded
+                if (!empty($imagePaths)) {
+                    foreach ($imagePaths as $oldImage) {
+                        Storage::disk('public')->delete($oldImage);
+                    }
                 }
-            }
 
-            $imagePaths = [];
-            foreach ($request->file('images') as $image) {
-                if ($image) {
-                    $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
-                    $image->storeAs('public/products', $imageName);
-                    $imagePaths[] = 'products/' . $imageName;
+                $imagePaths = [];
+                foreach ($uploadedFiles as $image) {
+                    if ($image && $image->isValid()) {
+                        $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+                        $path = Storage::disk('public')->putFileAs('products', $image, $imageName);
+                        if ($path) {
+                            $imagePaths[] = $path;
+                        }
+                    }
                 }
+            } else {
+                return redirect()->back()->with('error', 'Jika ingin mengganti gambar, upload minimal 5 foto!');
             }
         }
 
@@ -165,7 +200,14 @@ class AdminController extends Controller
             'harga' => $request->harga,
             'stok' => $request->stok,
             'brand' => $request->brand,
-            'images' => json_encode($imagePaths),
+            'deskripsi' => $request->deskripsi,
+            'images' => $imagePaths, // Will be cast to JSON automatically
+            'stok_39' => $request->stok_39 ?? $product->stok_39,
+            'stok_40' => $request->stok_40 ?? $product->stok_40,
+            'stok_41' => $request->stok_41 ?? $product->stok_41,
+            'stok_42' => $request->stok_42 ?? $product->stok_42,
+            'stok_43' => $request->stok_43 ?? $product->stok_43,
+            'stok_44' => $request->stok_44 ?? $product->stok_44,
         ]);
 
         return redirect()->route('admin.produk.index')->with('success', 'Produk berhasil diperbarui!');
@@ -176,10 +218,10 @@ class AdminController extends Controller
         $product = Product::findOrFail($id);
 
         // Delete associated images
-        $imagePaths = json_decode($product->images ?? '[]', true) ?: [];
+        $imagePaths = is_array($product->images) ? $product->images : (json_decode($product->images ?? '[]', true) ?: []);
         if (!empty($imagePaths)) {
             foreach ($imagePaths as $imagePath) {
-                Storage::delete('public/' . $imagePath);
+                Storage::disk('public')->delete($imagePath);
             }
         }
 

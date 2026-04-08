@@ -93,9 +93,39 @@
                                     <tr>
                                         <td>{{ $loop->iteration }}</td>
                                         <td>
-                                            @php $firstItem = $order->items[0] ?? null; @endphp
-                                            @if($firstItem && !empty($firstItem['image']))
-                                                <img src="{{ asset($firstItem['image']) }}" alt="Foto pesanan" style="width:60px; height:60px; object-fit:cover; border-radius:8px;">
+                                            @php
+                                                $firstItem = $order->items[0] ?? null;
+                                                $firstImage = $firstItem['image'] ?? null;
+                                                if (!$firstImage && !empty($firstItem['product_id'])) {
+                                                    $product = \App\Models\Product::find($firstItem['product_id']);
+                                                    if ($product?->getFirstImageAttribute()) {
+                                                        $firstImage = $product->getFirstImageAttribute();
+                                                    } elseif (!empty($product?->image)) {
+                                                        $firstImage = $product->image;
+                                                    }
+                                                }
+                                                if ($firstImage && !(
+                                                    str_starts_with($firstImage, 'http://') ||
+                                                    str_starts_with($firstImage, 'https://') ||
+                                                    str_starts_with($firstImage, '/')
+                                                )) {
+                                                    if (str_starts_with($firstImage, 'products/')) {
+                                                        $firstImage = asset('uploads/' . $firstImage);
+                                                    } elseif (str_starts_with($firstImage, 'uploads/')) {
+                                                        $firstImage = asset($firstImage);
+                                                    } elseif (str_starts_with($firstImage, 'produk/')) {
+                                                        $firstImage = asset($firstImage);
+                                                    } elseif (\Illuminate\Support\Facades\Storage::disk('public')->exists($firstImage)) {
+                                                        $firstImage = asset('storage/' . $firstImage);
+                                                    } elseif (file_exists(public_path($firstImage))) {
+                                                        $firstImage = asset($firstImage);
+                                                    } else {
+                                                        $firstImage = asset($firstImage);
+                                                    }
+                                                }
+                                            @endphp
+                                            @if($firstImage)
+                                                <img src="{{ $firstImage }}" alt="Foto pesanan" style="width:60px; height:60px; object-fit:cover; border-radius:8px;">
                                             @else
                                                 <div style="width:60px; height:60px; background:#e9ecef; border-radius:8px;"></div>
                                             @endif

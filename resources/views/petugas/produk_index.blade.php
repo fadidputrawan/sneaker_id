@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Kelola Produk - Admin</title>
+    <title>Kelola Produk - Petugas</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         *{margin:0;padding:0;box-sizing:border-box;font-family:Arial,Helvetica,sans-serif}
@@ -64,7 +64,7 @@
         .image-upload-section h4{margin-bottom:15px;color:#333}
         .image-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:15px;margin-bottom:15px}
         .image-slot{border:2px dashed #ddd;border-radius:8px;width:120px;height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all 0.3s;position:relative;overflow:hidden}
-        .image-slot:hover{border-color:#007bff;background:#f8f9ff}
+        .image-slot:hover{border-color:#2563eb;background:#f8f9ff}
         .image-slot img{width:100%;height:100%;object-fit:cover;border-radius:6px}
         .image-slot .upload-icon{color:#999;font-size:24px;margin-bottom:5px}
         .image-slot .upload-text{color:#999;font-size:12px;text-align:center}
@@ -79,6 +79,10 @@
         .btn-cancel:hover{background:#5a6268}
 
         .logout{color:red;text-decoration:none;font-size:14px}
+
+        .alert{margin-bottom:18px;padding:14px 16px;border-radius:10px}
+        .alert.success{background:#d1fae5;color:#065f46}
+        .alert.error{background:#fee2e2;color:#991b1b}
     </style>
 </head>
 <body>
@@ -86,19 +90,25 @@
     <div class="sidebar">
         <div class="logo">SNEAKER ID</div>
         <div class="menu">
-            <a href="{{ route('admin.dashboard') }}" class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">Dashboard</a>
-            <a href="{{ route('admin.produk.index') }}" class="{{ request()->is('admin/produk*') ? 'active' : '' }}">Kelola Produk</a>
-            <a href="{{ route('admin.pesanan.index') }}" class="{{ request()->is('admin/pesanan*') ? 'active' : '' }}">Kelola Pesanan</a>
-            <a href="{{ route('admin.user.index') }}" class="{{ request()->is('admin/user*') ? 'active' : '' }}">Kelola User</a>
-            <a href="{{ route('admin.petugas.index') }}" class="{{ request()->is('admin/petugas*') ? 'active' : '' }}">Kelola Petugas</a>
+            <a href="{{ route('petugas.dashboard') }}" class="{{ request()->routeIs('petugas.dashboard') ? 'active' : '' }}">Dashboard</a>
+            <a href="{{ route('petugas.produk.index') }}" class="{{ request()->is('petugas/produk*') ? 'active' : '' }}">Kelola Produk</a>
+            <a href="{{ route('petugas.pesanan.index') }}" class="{{ request()->is('petugas/pesanan*') ? 'active' : '' }}">Kelola Pesanan</a>
+            <a href="{{ route('petugas.laporan') }}" class="{{ request()->routeIs('petugas.laporan') ? 'active' : '' }}">Laporan</a>
         </div>
     </div>
 
     <div class="main">
         <div class="topbar">
             <h2>Kelola Produk</h2>
-            <div>Admin | <a class="logout" href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">Logout</a></div>
+            <div>Petugas | <a class="logout" href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">Logout</a></div>
         </div>
+
+        @if(session('success'))
+            <div class="alert success">{{ session('success') }}</div>
+        @endif
+        @if(session('error'))
+            <div class="alert error">{{ session('error') }}</div>
+        @endif
 
         <div class="cards">
             <div class="card"><h4>Total Produk</h4><p>{{ $totalProduk }}</p></div>
@@ -110,10 +120,12 @@
         <div class="table-box">
             <div class="content-header">
                 <h4>Daftar Produk</h4>
-                    <button type="button" class="btn-add" onclick="openModal()">
-                        <i class="fas fa-plus"></i>
-                        Tambah Produk
-                    </button>
+                <button class="btn-add" onclick="openModal()">
+                    <i class="fas fa-plus"></i>
+                    Tambah Produk
+                </button>
+            </div>
+
             <table>
                 <thead>
                     <tr>
@@ -135,7 +147,7 @@
                                     $firstImage = $images[0] ?? null;
                                 @endphp
                                 @if($firstImage)
-                                    <img src="{{ asset('uploads/' . $firstImage) }}" alt="{{ $p->nama }}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2260%22 height=%2260%22%3E%3Crect fill=%22%23f0f0f0%22 width=%2260%22 height=%2260%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 font-size=%2212%22 fill=%22%23999%22 text-anchor=%22middle%22 dy=%22.3em%22%3ENo Image%3C/text%3E%3C/svg%3E'">
+                                    <img src="{{ asset('uploads/' . $firstImage) }}" alt="{{ $p->nama }}">
                                 @else
                                     <i class="fas fa-image no-image"></i>
                                 @endif
@@ -146,7 +158,7 @@
                         <td>{{ $p->stok ?? '-' }}</td>
                         <td>{{ $p->brand ?? '-' }}</td>
                         <td class="actions">
-                            <button type="button" class="btn-edit" onclick="editProductFromButton(this)" data-id="{{ $p->id }}" data-nama="@json($p->nama)" data-harga="{{ $p->harga }}" data-stok39="{{ $p->stok_39 ?? 0 }}" data-stok40="{{ $p->stok_40 ?? 0 }}" data-stok41="{{ $p->stok_41 ?? 0 }}" data-stok42="{{ $p->stok_42 ?? 0 }}" data-stok43="{{ $p->stok_43 ?? 0 }}" data-stok44="{{ $p->stok_44 ?? 0 }}" data-brand="@json($p->brand ?? '')" data-images="@json($p->images ?? [])">
+                            <button type="button" class="btn-edit" onclick="editProductFromButton(this)" data-id="{{ $p->id }}" data-nama="@json($p->nama)" data-harga="{{ $p->harga }}" data-stok39="{{ $p->stok_39 ?? 0 }}" data-stok40="{{ $p->stok_40 ?? 0 }}" data-stok41="{{ $p->stok_41 ?? 0 }}" data-stok42="{{ $p->stok_42 ?? 0 }}" data-stok43="{{ $p->stok_43 ?? 0 }}" data-stok44="{{ $p->stok_44 ?? 0 }}" data-brand="@json($p->brand ?? '')" data-deskripsi="@json($p->deskripsi ?? '')" data-images="@json($p->images ?? [])">
                                 <i class="fas fa-edit"></i> Edit
                             </button>
                             <button type="button" class="btn-delete" onclick="deleteProductFromButton(this)" data-id="{{ $p->id }}" data-nama="@json($p->nama)">
@@ -181,7 +193,6 @@
                     <input type="number" id="harga" name="harga" min="0" required>
                 </div>
 
-                <!-- Size Stock Section -->
                 <div class="form-group">
                     <label style="font-weight: bold; display: block; margin-bottom: 10px;">Stok Per Ukuran</label>
                     <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
@@ -227,7 +238,6 @@
                     <textarea id="deskripsi" name="deskripsi"></textarea>
                 </div>
 
-                <!-- Image Upload Section -->
                 <div class="image-upload-section">
                     <h4>Foto Produk (Minimal 5 foto)</h4>
                     <div class="image-grid" id="imageGrid">
@@ -270,10 +280,12 @@
 </div>
 
 <form id="logout-form" action="{{ route('logout') }}" method="POST">@csrf</form>
+<form id="deleteForm" method="POST" style="display:none;">@csrf
+    <input type="hidden" name="_method" value="DELETE">
+</form>
 
 <script>
 let currentProductId = null;
-let uploadedImages = [];
 let deleteProductId = null;
 
 function parseData(value) {
@@ -285,16 +297,10 @@ function parseData(value) {
     }
 }
 
-// Modal functions
-function openModal(productId = null) {
+function openModal() {
     document.getElementById('productModal').style.display = 'block';
-    if (productId) {
-        document.getElementById('modalTitle').textContent = 'Edit Produk';
-        // Load product data will be handled by editProduct function
-    } else {
-        document.getElementById('modalTitle').textContent = 'Tambah Produk';
-        resetForm();
-    }
+    document.getElementById('modalTitle').textContent = 'Tambah Produk';
+    resetForm();
 }
 
 function closeModal() {
@@ -303,7 +309,6 @@ function closeModal() {
 }
 
 function updateTotalStock() {
-    // Calculate total stock from all size inputs
     const stok39 = parseInt(document.getElementById('stok_39').value) || 0;
     const stok40 = parseInt(document.getElementById('stok_40').value) || 0;
     const stok41 = parseInt(document.getElementById('stok_41').value) || 0;
@@ -313,22 +318,22 @@ function updateTotalStock() {
     
     const totalStock = stok39 + stok40 + stok41 + stok42 + stok43 + stok44;
     
-    // Update display
     document.getElementById('totalStockDisplay').textContent = totalStock;
     document.getElementById('stok').value = totalStock;
 }
 
 function resetForm() {
     document.getElementById('productForm').reset();
-    document.getElementById('productForm').action = '{{ route("admin.produk.store") }}';
+    document.getElementById('productForm').action = '{{ route("petugas.produk.store") }}';
     document.getElementById('productForm').method = 'POST';
+    
+    // Remove _method input if exists
+    const methodInput = document.querySelector('input[name="_method"]');
+    if (methodInput) methodInput.remove();
+    
     currentProductId = null;
-    uploadedImages = [];
-
-    // Reset total stock display
     updateTotalStock();
 
-    // Reset image slots
     const slots = document.querySelectorAll('.image-slot');
     slots.forEach((slot, index) => {
         const slotNumber = index + 1;
@@ -336,7 +341,7 @@ function resetForm() {
         slot.innerHTML = `
             <i class="fas fa-camera upload-icon"></i>
             <span class="upload-text">Foto ${slotNumber}</span>
-            <input type="file" id="imageInput${slotNumber}" name="images[]" accept="image/*" style="display:none" onchange="previewImage(this, ${slotNumber})">
+            <input type="file" id="imageInput${slotNumber}" name="images[]" accept="image/*" style="display:none" data-slot="${slotNumber}" onchange="previewImage(this, ${slotNumber})">
         `;
         slot.onclick = function() {
             document.getElementById(`imageInput${slotNumber}`).click();
@@ -355,15 +360,12 @@ function editProductFromButton(button) {
     const stok43 = parseInt(button.getAttribute('data-stok43'));
     const stok44 = parseInt(button.getAttribute('data-stok44'));
     const brand = parseData(button.getAttribute('data-brand'));
+    const deskripsi = parseData(button.getAttribute('data-deskripsi'));
     let images = parseData(button.getAttribute('data-images'));
     if (typeof images === 'string' && images.startsWith('[')) {
         images = parseData(images);
     }
 
-    editProduct(id, nama, harga, stok39, stok40, stok41, stok42, stok43, stok44, brand, images);
-}
-
-function editProduct(id, nama, harga, stok39, stok40, stok41, stok42, stok43, stok44, brand, images) {
     currentProductId = id;
     document.getElementById('nama').value = nama;
     document.getElementById('harga').value = harga;
@@ -374,10 +376,9 @@ function editProduct(id, nama, harga, stok39, stok40, stok41, stok42, stok43, st
     document.getElementById('stok_43').value = stok43;
     document.getElementById('stok_44').value = stok44;
     document.getElementById('brand').value = brand;
+    document.getElementById('deskripsi').value = deskripsi;
 
-    // Load existing images
     if (images && Array.isArray(images)) {
-        uploadedImages = images;
         images.forEach((image, index) => {
             if (index < 8) {
                 const slotNumber = index + 1;
@@ -386,22 +387,17 @@ function editProduct(id, nama, harga, stok39, stok40, stok41, stok42, stok43, st
                     slot.classList.add('filled');
                     slot.innerHTML = `
                         <img src="{{ asset('uploads/') }}/${image}" alt="Foto ${slotNumber}" style="width:100%;height:100%;object-fit:cover;border-radius:5px;">
-                        <button type="button" class="remove-image" onclick="removeImage(${slotNumber})" style="position:absolute;top:5px;right:5px;background:red;color:white;border:none;border-radius:50%;width:20px;height:20px;cursor:pointer;">×</button>
-                        <input type="file" id="imageInput${slotNumber}" name="images[]" accept="image/*" style="display:none" onchange="previewImage(this, ${slotNumber})">
+                        <button type="button" class="remove-image" onclick="event.stopPropagation(); removeImageSlot(${slotNumber})">×</button>
+                        <input type="file" id="imageInput${slotNumber}" name="images[]" accept="image/*" style="display:none" data-slot="${slotNumber}" onchange="previewImage(this, ${slotNumber})">
                     `;
                 }
             }
         });
     }
 
-    // Update total stock display
     updateTotalStock();
-
-    // Set form action for update
-    document.getElementById('productForm').action = `/admin/produk/${id}`;
-    document.getElementById('productForm').method = 'POST';
-
-    // Add method spoofing for PUT
+    document.getElementById('productForm').action = `/petugas/produk/${id}`;
+    
     let methodInput = document.querySelector('input[name="_method"]');
     if (!methodInput) {
         methodInput = document.createElement('input');
@@ -411,26 +407,83 @@ function editProduct(id, nama, harga, stok39, stok40, stok41, stok42, stok43, st
     }
     methodInput.value = 'PUT';
 
-    openModal(id);
+    document.getElementById('modalTitle').textContent = 'Edit Produk';
+    openModal();
 }
 
 function deleteProductFromButton(button) {
     const id = button.getAttribute('data-id');
     const name = parseData(button.getAttribute('data-nama'));
-    deleteProduct(id, name);
-}
-
-function deleteProduct(id, name) {
     deleteProductId = id;
     document.getElementById('deleteProductName').textContent = name;
     document.getElementById('deleteModal').style.display = 'block';
+}
+
+function removeImageSlot(slotNumber) {
+    const slot = document.querySelector(`.image-slot:nth-child(${slotNumber})`);
+    if (slot) {
+        slot.classList.remove('filled');
+        slot.innerHTML = `
+            <i class="fas fa-camera upload-icon"></i>
+            <span class="upload-text">Foto ${slotNumber}</span>
+            <input type="file" id="imageInput${slotNumber}" name="images[]" accept="image/*" style="display:none" data-slot="${slotNumber}" onchange="previewImage(this, ${slotNumber})">
+        `;
+        slot.onclick = function() {
+            document.getElementById(`imageInput${slotNumber}`).click();
+        };
+    }
+}
+
+function previewImage(input, slotNumber) {
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+
+        if (!file.type.startsWith('image/')) {
+            alert('File harus berupa gambar!');
+            input.value = '';
+            return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
+            alert('Ukuran file maksimal 5MB!');
+            input.value = '';
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const slot = input.closest('.image-slot');
+            slot.innerHTML = '';
+
+            const previewImg = document.createElement('img');
+            previewImg.src = e.target.result;
+            previewImg.alt = 'Preview';
+            previewImg.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:5px;';
+
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.className = 'remove-image';
+            removeBtn.textContent = '×';
+            removeBtn.addEventListener('click', function(event) {
+                event.stopPropagation();
+                removeImageSlot(slotNumber);
+            });
+
+            slot.appendChild(previewImg);
+            slot.appendChild(removeBtn);
+            slot.appendChild(input);
+            input.style.display = 'none';
+            slot.classList.add('filled');
+        };
+        reader.readAsDataURL(file);
+    }
 }
 
 document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
     if (deleteProductId) {
         const form = document.createElement('form');
         form.method = 'POST';
-        form.action = `/admin/produk/${deleteProductId}`;
+        form.action = `/petugas/produk/${deleteProductId}`;
 
         const methodInput = document.createElement('input');
         methodInput.type = 'hidden';
@@ -454,113 +507,10 @@ function closeDeleteModal() {
     deleteProductId = null;
 }
 
-// Image preview function
-function previewImage(input, slotNumber) {
-    if (input.files && input.files[0]) {
-        const file = input.files[0];
-
-        // Validate file type
-        if (!file.type.startsWith('image/')) {
-            alert('File harus berupa gambar!');
-            input.value = '';
-            return;
-        }
-
-        // Validate file size (max 5MB)
-        if (file.size > 5 * 1024 * 1024) {
-            alert('Ukuran file maksimal 5MB!');
-            input.value = '';
-            return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const slot = input.closest('.image-slot');
-            slot.innerHTML = '';
-
-            const previewImg = document.createElement('img');
-            previewImg.src = e.target.result;
-            previewImg.alt = 'Preview';
-
-            const removeBtn = document.createElement('button');
-            removeBtn.type = 'button';
-            removeBtn.className = 'remove-image';
-            removeBtn.textContent = '×';
-            removeBtn.addEventListener('click', function(event) {
-                event.stopPropagation();
-                removeImage(slotNumber);
-            });
-
-            slot.appendChild(previewImg);
-            slot.appendChild(removeBtn);
-            slot.appendChild(input);
-            input.style.display = 'none';
-            slot.classList.add('filled');
-            uploadedImages[slotNumber - 1] = file;
-            slot.onclick = function() {
-                input.click();
-            };
-        };
-        reader.readAsDataURL(file);
-    }
-}
-
-function removeImage(slotNumber) {
-    const slot = document.querySelectorAll('.image-slot')[slotNumber - 1];
-    const fileInput = slot.querySelector('input[type="file"]');
-    if (fileInput) {
-        fileInput.value = '';
-    }
-
-    slot.classList.remove('filled');
-    slot.innerHTML = `
-        <i class="fas fa-camera upload-icon"></i>
-        <span class="upload-text">Foto ${slotNumber}</span>
-    `;
-    const newInput = document.createElement('input');
-    newInput.type = 'file';
-    newInput.id = `imageInput${slotNumber}`;
-    newInput.name = 'images[]';
-    newInput.accept = 'image/*';
-    newInput.style.display = 'none';
-    newInput.onchange = function() {
-        previewImage(this, slotNumber);
-    };
-
-    slot.appendChild(newInput);
-    slot.onclick = function() {
-        newInput.click();
-    };
-    uploadedImages[slotNumber - 1] = null;
-}
-
-// Form validation
-document.getElementById('productForm').addEventListener('submit', function(e) {
-    const filledSlots = document.querySelectorAll('.image-slot.filled').length;
-
-    if (!currentProductId && filledSlots < 5) {
-        e.preventDefault();
-        alert('Minimal 5 foto produk harus diupload!');
-        return;
-    }
-
-    if (currentProductId && filledSlots > 0 && filledSlots < 5) {
-        e.preventDefault();
-        alert('Jika ingin mengganti foto produk, unggah minimal 5 foto!');
-        return;
-    }
-
-    // Show loading state
-    const saveBtn = document.getElementById('saveBtn');
-    saveBtn.textContent = 'Menyimpan...';
-    saveBtn.disabled = true;
-});
-
-// Close modal when clicking outside
 window.onclick = function(event) {
-    const modal = document.getElementById('productModal');
+    const productModal = document.getElementById('productModal');
     const deleteModal = document.getElementById('deleteModal');
-    if (event.target == modal) {
+    if (event.target == productModal) {
         closeModal();
     }
     if (event.target == deleteModal) {

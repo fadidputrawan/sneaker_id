@@ -112,8 +112,38 @@
                                 @foreach($order->items as $item)
                                     <tr>
                                         <td>
-                                            @if(!empty($item['image']))
-                                                <img src="{{ asset($item['image']) }}" alt="Foto produk" style="width:60px; height:60px; object-fit:cover; border-radius:8px;">
+                                            @php
+                                                $itemImage = $item['image'] ?? null;
+                                                if (!$itemImage && !empty($item['product_id'])) {
+                                                    $product = \App\Models\Product::find($item['product_id']);
+                                                    if ($product?->getFirstImageAttribute()) {
+                                                        $itemImage = $product->getFirstImageAttribute();
+                                                    } elseif (!empty($product?->image)) {
+                                                        $itemImage = $product->image;
+                                                    }
+                                                }
+                                                if ($itemImage && !(
+                                                    str_starts_with($itemImage, 'http://') ||
+                                                    str_starts_with($itemImage, 'https://') ||
+                                                    str_starts_with($itemImage, '/')
+                                                )) {
+                                                    if (str_starts_with($itemImage, 'products/')) {
+                                                        $itemImage = asset('uploads/' . $itemImage);
+                                                    } elseif (str_starts_with($itemImage, 'uploads/')) {
+                                                        $itemImage = asset($itemImage);
+                                                    } elseif (str_starts_with($itemImage, 'produk/')) {
+                                                        $itemImage = asset($itemImage);
+                                                    } elseif (\Illuminate\Support\Facades\Storage::disk('public')->exists($itemImage)) {
+                                                        $itemImage = asset('storage/' . $itemImage);
+                                                    } elseif (file_exists(public_path($itemImage))) {
+                                                        $itemImage = asset($itemImage);
+                                                    } else {
+                                                        $itemImage = asset($itemImage);
+                                                    }
+                                                }
+                                            @endphp
+                                            @if(!empty($itemImage))
+                                                <img src="{{ $itemImage }}" alt="Foto produk" style="width:60px; height:60px; object-fit:cover; border-radius:8px;">
                                             @else
                                                 <div style="width:60px; height:60px; background:#e9ecef; border-radius:8px;"></div>
                                             @endif

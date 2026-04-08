@@ -2,9 +2,20 @@
 <html>
 <head>
     <title>{{ $product->nama }} - Sneaker ID</title>
+    @php
+        $sizeStocks = [
+            '39' => $product->stok_39 ?? 0,
+            '40' => $product->stok_40 ?? 0,
+            '41' => $product->stok_41 ?? 0,
+            '42' => $product->stok_42 ?? 0,
+            '43' => $product->stok_43 ?? 0,
+            '44' => $product->stok_44 ?? 0
+        ];
+    @endphp
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="product-id" content="{{ $product->id }}">
     <meta name="is-authenticated" content="{{ Auth::check() ? 'true' : 'false' }}">
+    <meta name="size-stocks" content="{{ json_encode($sizeStocks) }}">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     <style>
@@ -185,6 +196,12 @@
             background: #333;
             color: white;
             border-color: #333;
+        }
+
+        .size-btn.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
         }
 
         .shipping-info {
@@ -392,21 +409,24 @@
             <div class="col-md-5">
                 <div class="product-gallery">
                     <div class="thumbnails">
-                        <div class="thumbnail active" onclick="changeMainImage('{{ asset($product->image) }}')">
-                            <img src="{{ asset($product->image) }}" alt="{{ $product->nama }}">
-                        </div>
-                        <div class="thumbnail" onclick="changeMainImage(`{{ asset('detail/2.jpg') }}`)"> 
-                            <img src="{{ asset('detail/2.jpg') }}" alt="View 2">
-                        </div>
-                        <div class="thumbnail" onclick="changeMainImage(`{{ asset('detail/3.jpg') }}`)">  
-                            <img src="{{ asset('detail/3.jpg') }}" alt="View 3">
-                        </div>
-                        <div class="thumbnail" onclick="changeMainImage(`{{ asset('detail/4.jpg') }}`)">  
-                            <img src="{{ asset('detail/4.jpg') }}" alt="View 4">
-                        </div>
+                        @php
+                            $images = is_array($product->images) ? $product->images : (json_decode($product->images, true) ?? []);
+                            $defaultImage = !empty($images) ? asset('uploads/' . $images[0]) : asset('produk/sepatu1.jpg');
+                        @endphp
+                        @if(!empty($images))
+                            @foreach($images as $index => $image)
+                                <div class="thumbnail @if($index === 0) active @endif" data-src="{{ asset('uploads/' . $image) }}" onclick="changeMainImage(this.dataset.src)">
+                                    <img src="{{ asset('uploads/' . $image) }}" alt="{{ $product->nama }} - View {{ $index + 1 }}" data-fallback="{{ asset('produk/sepatu1.jpg') }}" onload="if(!this.complete) this.src=this.dataset.fallback">
+                                </div>
+                            @endforeach
+                        @else
+                            <div class="thumbnail active" data-src="{{ asset('produk/sepatu1.jpg') }}" onclick="changeMainImage(this.dataset.src)">
+                                <img src="{{ asset('produk/sepatu1.jpg') }}" alt="{{ $product->nama }}">
+                            </div>
+                        @endif
                     </div>
                     <div class="main-image">
-                        <img id="mainImage" src="{{ asset($product->image) }}" alt="{{ $product->nama }}">
+                        <img id="mainImage" src="{{ $defaultImage }}" alt="{{ $product->nama }}" data-fallback="{{ asset('produk/sepatu1.jpg') }}" onload="if(!this.complete) this.src=this.dataset.fallback">
                     </div>
                 </div>
             </div>
@@ -430,15 +450,34 @@
 
                     <div class="price">Rp. {{ number_format($product->harga, 2, ',', '.') }}</div>
 
+                    <!-- Stock Alert -->
+                    <div id="stockAlert" style="background: #e7f3ff; border-left: 4px solid #2196F3; padding: 10px 15px; margin-bottom: 15px; border-radius: 4px; display: none;">
+                        <span style="color: #1976d2; font-weight: bold;">Stok Tersedia: <span id="currentStock">0</span> pasang</span>
+                    </div>
+
                     <!-- Size Selector -->
                     <div class="section-title">Ukuran</div>
                     <div class="size-selector">
-                        <button class="size-btn active" onclick="selectSize(this, 39)">39</button>
-                        <button class="size-btn" onclick="selectSize(this, 40)">40</button>
-                        <button class="size-btn" onclick="selectSize(this, 41)">41</button>
-                        <button class="size-btn" onclick="selectSize(this, 42)">42</button>
-                        <button class="size-btn" onclick="selectSize(this, 43)">43</button>
-                        <button class="size-btn" onclick="selectSize(this, 44)">44</button>
+                        @php
+                            $sizes = [39, 40, 41, 42, 43, 44];
+                            $selectedSize = 39;
+                        @endphp
+                        @foreach($sizes as $size)
+                            @php
+                                $stokForSize = $product->getStockForSize($size);
+                                $isDisabled = $stokForSize === 0;
+                            @endphp
+                            <button class="size-btn @if($size === 39) active @endif @if($isDisabled) disabled @endif" 
+                                    data-size="{{ $size }}"
+                                    onclick="selectSize(this, parseInt(this.dataset.size))"
+                                    data-stock="{{ $stokForSize }}"
+                                    title="Stok: {{ $stokForSize }} pasang">
+                                {{ $size }}
+                                @if($isDisabled)
+                                    <span style="font-size: 10px; display: block;">Habis</span>
+                                @endif
+                            </button>
+                        @endforeach
                     </div>
 
                     <!-- Shipping Info -->
@@ -501,6 +540,10 @@
         // Initialize variables from meta tags
         const isAuthenticated = document.querySelector('meta[name="is-authenticated"]').content === 'true';
         const productId = parseInt(document.querySelector('meta[name="product-id"]').content);
+        let selectedSize = 39;  // Default selected size
+        
+        // Size stocks data from product
+        const sizeStocks = JSON.parse(document.querySelector('meta[name="size-stocks"]').content);
         
         function changeMainImage(src) {
             document.getElementById('mainImage').src = src;
@@ -513,10 +556,22 @@
         }
 
         function selectSize(button, size) {
+            // Check if button is disabled
+            if (button.classList.contains('disabled')) {
+                alert('Ukuran ' + size + ' sedang habis stok');
+                return;
+            }
+
             document.querySelectorAll('.size-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
             button.classList.add('active');
+            selectedSize = size;  // Store the selected size
+            
+            // Update stock display for selected size
+            const stockForSize = sizeStocks[size] || 0;
+            document.getElementById('currentStock').textContent = stockForSize;
+            document.getElementById('stockAlert').style.display = 'block';
         }
 
         function increaseQty() {
@@ -536,27 +591,73 @@
 
             fetch('{{ route("cart.add") }}', {
                 method: 'POST',
+                redirect: 'manual',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : ''
                 },
                 body: JSON.stringify({
                     product_id: productId,
-                    quantity: quantity
+                    quantity: quantity,
+                    size: selectedSize
                 })
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        alert('Silakan login terlebih dahulu untuk menambahkan ke keranjang');
+                        window.location.href = '{{ route("login") }}';
+                        return Promise.reject(new Error('Unauthorized'));
+                    }
+                    if (response.status === 419) {
+                        alert('Sesi telah berakhir. Silakan refresh halaman dan coba lagi.');
+                        return Promise.reject(new Error('Session expired'));
+                    }
+                }
+                return parseJsonSafe(response).then(data => {
+                    if (!response.ok) {
+                        throw new Error(data.message || 'Gagal menambahkan ke keranjang');
+                    }
+                    return data;
+                });
+            })
             .then(data => {
                 if (data.success) {
                     alert(data.message);
                     updateCartCount();
                 } else {
-                    alert('Gagal menambahkan ke keranjang');
+                    alert(data.message || 'Gagal menambahkan ke keranjang');
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Terjadi kesalahan');
+                alert(error.message || 'Terjadi kesalahan saat menambahkan ke keranjang');
+            });
+        }
+
+        function parseJsonSafe(response) {
+            const contentType = response.headers.get('content-type') || '';
+            if (response.status >= 300 && response.status < 400) {
+                return Promise.reject(new Error('Server mengarahkan ulang ke login atau halaman lain. Silakan login ulang.'));
+            }
+            if (response.url.includes('/login')) {
+                return Promise.reject(new Error('Silakan login terlebih dahulu.'));
+            }
+            if (contentType.includes('application/json')) {
+                return response.json();
+            }
+            return response.text().then(text => {
+                if (text.includes('<!DOCTYPE html') || text.includes('<html')) {
+                    if (text.toLowerCase().includes('login') || text.toLowerCase().includes('csrf')) {
+                        throw new Error('Silakan login ulang atau refresh halaman, sesi/CSRF tidak valid.');
+                    }
+                    throw new Error('Server merespon dengan HTML. Silakan periksa sesi atau CSRF token.');
+                }
+                try {
+                    return JSON.parse(text);
+                } catch (e) {
+                    throw new Error('Server merespon dengan konten tidak valid.');
+                }
             });
         }
 
@@ -571,27 +672,46 @@
 
             fetch('{{ route("cart.add") }}', {
                 method: 'POST',
+                redirect: 'manual',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : ''
                 },
                 body: JSON.stringify({
                     product_id: productId,
-                    quantity: quantity
+                    quantity: quantity,
+                    size: selectedSize
                 })
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        alert('Silakan login terlebih dahulu untuk melakukan pembelian');
+                        window.location.href = '{{ route("login") }}';
+                        return Promise.reject(new Error('Unauthorized'));
+                    }
+                    if (response.status === 419) {
+                        alert('Sesi telah berakhir. Silakan refresh halaman dan coba lagi.');
+                        return Promise.reject(new Error('Session expired'));
+                    }
+                }
+                return parseJsonSafe(response).then(data => {
+                    if (!response.ok) {
+                        throw new Error(data.message || 'Gagal menambahkan ke keranjang');
+                    }
+                    return data;
+                });
+            })
             .then(data => {
                 if (data.success) {
-                    // Redirect ke cart page setelah berhasil ditambahkan
                     window.location.href = '{{ route("cart.index") }}';
                 } else {
-                    alert('Gagal menambahkan ke keranjang');
+                    alert(data.message || 'Gagal menambahkan ke keranjang');
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Terjadi kesalahan');
+                alert(error.message || 'Terjadi kesalahan saat menambahkan ke keranjang');
             });
         }
 
@@ -681,6 +801,13 @@
             updateCartCount();
             updateWishlistCount();
             checkWishlistStatus();
+            
+            // Initialize stock display for default size (39)
+            const defaultStockForSize = sizeStocks[39] || 0;
+            document.getElementById('currentStock').textContent = defaultStockForSize;
+            if (defaultStockForSize > 0) {
+                document.getElementById('stockAlert').style.display = 'block';
+            }
         });
     </script>
 </body>

@@ -164,4 +164,28 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/petugas/dashboard', [PetugasController::class, 'dashboard'])
         ->name('petugas.dashboard');
 
+    Route::get('/petugas/pesanan', [PetugasController::class, 'pesanan'])
+        ->name('petugas.pesanan.index');
+
+    Route::get('/petugas/pesanan/{id}', [PetugasController::class, 'orderShow'])
+        ->name('petugas.order.show');
+
+    Route::post('/petugas/pesanan/{id}/status', [PetugasController::class, 'orderStatus'])
+        ->name('petugas.order.status');
+
+    Route::get('/petugas/laporan', [PetugasController::class, 'laporan'])
+        ->name('petugas.laporan');
+
+    Route::get('/petugas/produk', [PetugasController::class, 'produk'])
+        ->name('petugas.produk.index');
+
+    Route::post('/petugas/produk', [PetugasController::class, 'storeProduk'])
+        ->name('petugas.produk.store');
+
+    Route::put('/petugas/produk/{id}', [PetugasController::class, 'updateProduk'])
+        ->name('petugas.produk.update');
+
+    Route::delete('/petugas/produk/{id}', [PetugasController::class, 'destroyProduk'])
+        ->name('petugas.produk.destroy');
+
 });

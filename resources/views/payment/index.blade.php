@@ -690,9 +690,12 @@
                     <div class="section-title">Ringkasan Belanja</div>
                     
                     @foreach($cartItems as $item)
+                        @php
+                            $productImage = $item->product->getFirstImageAttribute() ? 'uploads/' . $item->product->getFirstImageAttribute() : ($item->product->image ?? 'produk/sepatu1.jpg');
+                        @endphp
                         <div class="summary-item">
                             <div class="item-image">
-                                <img src="{{ asset($item->product->image) }}" alt="{{ $item->product->nama }}">
+                                <img src="{{ asset($productImage) }}" alt="{{ $item->product->nama }}">
                             </div>
                             <div class="item-details">
                                 <div class="item-name">{{ $item->product->nama }}</div>
@@ -1030,6 +1033,32 @@
             document.getElementById('pendingStep').style.display = 'block';
         }
 
+        function parseJsonSafe(response) {
+            const contentType = response.headers.get('content-type') || '';
+            if (response.status >= 300 && response.status < 400) {
+                return Promise.reject(new Error('Server mengarahkan ulang ke login atau halaman lain. Silakan login ulang.'));
+            }
+            if (response.url.includes('/login')) {
+                return Promise.reject(new Error('Silakan login terlebih dahulu.'));
+            }
+            if (contentType.includes('application/json')) {
+                return response.json();
+            }
+            return response.text().then(text => {
+                if (text.includes('<!DOCTYPE html') || text.includes('<html')) {
+                    if (text.toLowerCase().includes('login') || text.toLowerCase().includes('csrf')) {
+                        throw new Error('Silakan login ulang atau refresh halaman, sesi/CSRF tidak valid.');
+                    }
+                    throw new Error('Server merespon dengan HTML. Silakan periksa sesi atau CSRF token.');
+                }
+                try {
+                    return JSON.parse(text);
+                } catch (e) {
+                    throw new Error('Server merespon dengan konten tidak valid.');
+                }
+            });
+        }
+
         function submitOrderToServer(paymentMethod, proofFile = null) {
             if (orderCreationInProgress) {
                 return Promise.reject(new Error('Pesanan sedang diproses. Mohon tunggu.'));
@@ -1044,25 +1073,27 @@
                 formData.append('proof_file', proofFile);
             }
 
-            return fetch('{{ route('orders.store') }}', {
+            return fetch("{{ route('orders.store') }}", {
                 method: 'POST',
+                redirect: 'manual',
                 headers: {
                     'X-CSRF-TOKEN': csrfToken,
                     'Accept': 'application/json',
                 },
                 body: formData,
             })
-            .then(async response => {
-                const data = await response.json();
-                orderCreationInProgress = false;
+            .then(response => {
+                return parseJsonSafe(response).then(data => {
+                    orderCreationInProgress = false;
 
-                if (!response.ok) {
-                    throw new Error(data.message || (data.errors ? Object.values(data.errors).flat()[0] : 'Gagal membuat pesanan.'));
-                }
+                    if (!response.ok) {
+                        throw new Error(data.message || (data.errors ? Object.values(data.errors).flat()[0] : 'Gagal membuat pesanan.'));
+                    }
 
-                createdOrderUrl = data.show_url;
-                createdOrderId = data.id;
-                return data;
+                    createdOrderUrl = data.show_url;
+                    createdOrderId = data.id;
+                    return data;
+                });
             })
             .catch(error => {
                 orderCreationInProgress = false;
@@ -1194,23 +1225,39 @@
 
             console.log('DOM Loaded');
             
-            // Handle payment method selection: enable 'Lanjut' only after a choice
+            // Handle payment method selection: enable 'Lanjut' only after a choice and terms agreement
             const proceedBtn = document.getElementById('proceedBtn');
+            const agreeTermsCheckbox = document.getElementById('agree-terms');
+
+            const updateProceedButton = () => {
+                const paymentSelected = !!document.querySelector('input[name="payment_method"]:checked');
+                const agreeChecked = agreeTermsCheckbox ? agreeTermsCheckbox.checked : true;
+                if (proceedBtn) {
+                    if (paymentSelected && agreeChecked) {
+                        proceedBtn.disabled = false;
+                        proceedBtn.style.opacity = '1';
+                        proceedBtn.style.cursor = 'pointer';
+                    } else {
+                        proceedBtn.disabled = true;
+                        proceedBtn.style.opacity = '0.6';
+                        proceedBtn.style.cursor = 'not-allowed';
+                    }
+                }
+            };
+
             document.querySelectorAll('input[name="payment_method"]').forEach(radio => {
                 radio.addEventListener('change', function() {
                     document.querySelectorAll('.payment-option').forEach(opt => {
                         opt.classList.remove('selected');
                     });
                     this.closest('.payment-option').classList.add('selected');
-
-                    // Enable the proceed button
-                    if (proceedBtn) {
-                        proceedBtn.disabled = false;
-                        proceedBtn.style.opacity = '1';
-                        proceedBtn.style.cursor = 'pointer';
-                    }
+                    updateProceedButton();
                 });
             });
+
+            if (agreeTermsCheckbox) {
+                agreeTermsCheckbox.addEventListener('change', updateProceedButton);
+            }
 
             // Handle proceed button click: open QRIS only after user confirms by clicking 'Lanjut'
             if (proceedBtn) {
@@ -1218,6 +1265,10 @@
                     const paymentMethod = document.querySelector('input[name="payment_method"]:checked');
                     if (!paymentMethod) {
                         alert('Silakan pilih metode pembayaran terlebih dahulu');
+                        return;
+                    }
+                    if (agreeTermsCheckbox && !agreeTermsCheckbox.checked) {
+                        alert('Silakan menyetujui syarat dan ketentuan terlebih dahulu.');
                         return;
                     }
 

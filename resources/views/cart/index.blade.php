@@ -460,11 +460,22 @@
                     @foreach($cartItems as $item)
                         <div class="cart-item" data-cart-id="{{ $item->id }}" data-product-price="{{ $item->product->harga }}">
                             <div class="cart-item-image">
-                                <img src="{{ asset($item->product->image) }}" alt="{{ $item->product->nama }}">
+                                @php
+                                    $images = is_array($item->product->images) ? $item->product->images : (json_decode($item->product->images, true) ?? []);
+                                    $imagePath = !empty($images) ? 'uploads/' . $images[0] : ($item->product->image ?? 'produk/sepatu1.jpg');
+                                @endphp
+                                <img src="{{ asset($imagePath) }}" alt="{{ $item->product->nama }}">
                             </div>
 
                             <div class="cart-item-details">
                                 <div class="cart-item-name">{{ $item->product->nama }}</div>
+                                <div style="font-size: 12px; color: #666; margin-bottom: 5px;">
+                                    Ukuran: <strong>{{ $item->size }}</strong>
+                                    @php
+                                        $availableStock = $item->product->getStockForSize($item->size);
+                                    @endphp
+                                    | Stok: <strong>{{ $availableStock }}</strong> pasang
+                                </div>
                                 <div class="cart-item-price">Rp {{ number_format($item->product->harga, 0, ',', '.') }}</div>
                                 <div class="cart-item-actions">
                                     <div class="qty-control">

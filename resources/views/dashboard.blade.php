@@ -216,7 +216,8 @@
     <div class="row" id="productsContainer">
         @forelse($products as $product)
         @php
-            $fallbackImage = json_decode($product->images ?? '[]', true)[0] ?? $product->image ?? 'produk/sepatu1.jpg';
+            $images = is_array($product->images) ? $product->images : (json_decode($product->images, true) ?? []);
+            $fallbackImage = !empty($images) ? 'uploads/' . $images[0] : ($product->image ?? 'produk/sepatu1.jpg');
         @endphp
         <div class="col-md-3 mb-4 product-card" data-brand="{{ $product->brand }}">
             <div style="position: relative;">

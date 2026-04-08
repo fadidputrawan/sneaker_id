@@ -414,9 +414,10 @@
                             <strong>{{ $user->phone ?? '+62857...' }}</strong>
                         </div>
                         @if($user->address)
-                            <input type="checkbox" checked style="margin-top: 12px;">
-                            <span style="font-size: 12px;">Gunakan alamat ini</span>
+                            <input type="checkbox" id="useAddressCheckbox" style="margin-top: 12px;">
+                            <label for="useAddressCheckbox" style="font-size: 12px; cursor: pointer;">Gunakan alamat ini</label>
                             <a href="{{ route('profile.edit-address') }}" class="change-link d-block">Ubah Alamat</a>
+                            <div id="addressHint" style="font-size: 12px; color: #888; margin-top: 5px;">Centang terlebih dahulu untuk melanjutkan.</div>
                         @endif
                     </div>
 
@@ -435,9 +436,12 @@
                     <div class="section-title">Ringkasan Belanja</div>
                     
                     @foreach($cartItems as $item)
+                        @php
+                            $productImage = $item->product->getFirstImageAttribute() ? 'uploads/' . $item->product->getFirstImageAttribute() : ($item->product->image ?? 'produk/sepatu1.jpg');
+                        @endphp
                         <div class="summary-item">
                             <div class="item-image">
-                                <img src="{{ asset($item->product->image) }}" alt="{{ $item->product->nama }}">
+                                <img src="{{ asset($productImage) }}" alt="{{ $item->product->nama }}">
                             </div>
                             <div class="item-details">
                                 <div class="item-name">{{ $item->product->nama }}</div>
@@ -462,7 +466,11 @@
                         </div>
                     </div>
 
-                    <button class="btn-checkout" onclick="proceedToPayment()">Lanjutkan</button>
+                    @if($user->address)
+                        <button id="checkoutBtn" class="btn-checkout" onclick="proceedToPayment()" disabled style="opacity:0.6; cursor:not-allowed;">Lanjutkan</button>
+                    @else
+                        <button id="checkoutBtn" class="btn-checkout" onclick="proceedToPayment()">Lanjutkan</button>
+                    @endif
                 </div>
             </div>
         </div>
@@ -479,10 +487,36 @@
                 window.location.href = profileEditUrl;
                 return;
             }
+
+            const useAddressCheckbox = document.getElementById('useAddressCheckbox');
+            if (useAddressCheckbox && !useAddressCheckbox.checked) {
+                alert('Silakan centang "Gunakan alamat ini" terlebih dahulu agar bisa melanjutkan.');
+                return;
+            }
             
             // Redirect ke halaman pembayaran
             window.location.href = "{{ route('payment') }}";
         }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const useAddressCheckbox = document.getElementById('useAddressCheckbox');
+            const checkoutButton = document.getElementById('checkoutBtn');
+
+            if (useAddressCheckbox && checkoutButton) {
+                useAddressCheckbox.checked = false;
+                useAddressCheckbox.addEventListener('change', function() {
+                    if (useAddressCheckbox.checked) {
+                        checkoutButton.disabled = false;
+                        checkoutButton.style.opacity = '1';
+                        checkoutButton.style.cursor = 'pointer';
+                    } else {
+                        checkoutButton.disabled = true;
+                        checkoutButton.style.opacity = '0.6';
+                        checkoutButton.style.cursor = 'not-allowed';
+                    }
+                });
+            }
+        });
 
         // Handle shipping option selection
         document.querySelectorAll('input[name="shipping"]').forEach(radio => {

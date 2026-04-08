@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Order extends Model
 {
-    protected $fillable = ['user_id', 'nama', 'total', 'status', 'payment_method', 'items', 'payment_proof'];
+    protected $fillable = ['user_id', 'nama', 'total', 'status', 'payment_method', 'items', 'payment_proof', 'cancelled_by'];
 
     protected $casts = [
         'items' => 'array',

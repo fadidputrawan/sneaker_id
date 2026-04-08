@@ -18,25 +18,56 @@ class CartController extends Controller
 
         $request->validate([
             'product_id' => 'required|exists:products,id',
-            'quantity' => 'required|integer|min:1'
+            'quantity' => 'required|integer|min:1',
+            'size' => 'required|integer|in:39,40,41,42,43,44'
         ]);
 
         $userId = Auth::id();
         $productId = $request->product_id;
         $quantity = $request->quantity;
+        $size = $request->size;
 
+        // Check product stock for the selected size
+        $product = Product::findOrFail($productId);
+        $sizeStockColumn = 'stok_' . $size;
+        $availableStock = $product->$sizeStockColumn ?? 0;
+
+        if ($availableStock === 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Ukuran ' . $size . ' sudah habis stok'
+            ]);
+        }
+
+        if ($quantity > $availableStock) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Stok untuk ukuran ' . $size . ' hanya tersisa ' . $availableStock . ' pasang'
+            ]);
+        }
+
+        // Check if cart item already exists with same product and size
         $cartItem = Cart::where('user_id', $userId)
                         ->where('product_id', $productId)
+                        ->where('size', $size)
                         ->first();
 
         if ($cartItem) {
+            // Check if adding quantity exceeds available stock
+            if (($cartItem->quantity + $quantity) > $availableStock) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Stok tidak cukup. Hanya tersisa ' . ($availableStock - $cartItem->quantity) . ' pasang'
+                ]);
+            }
             $cartItem->quantity += $quantity;
             $cartItem->save();
         } else {
             Cart::create([
                 'user_id' => $userId,
                 'product_id' => $productId,
-                'quantity' => $quantity
+                'quantity' => $quantity,
+                'size' => $size
             ]);
         }
 

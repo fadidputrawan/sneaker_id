@@ -87,13 +87,20 @@ class OrderController extends Controller
         }
 
         $items = $cartItems->map(function ($item) {
+            $imagePath = null;
+            if ($item->product->getFirstImageAttribute()) {
+                $imagePath = 'uploads/' . $item->product->getFirstImageAttribute();
+            } elseif (!empty($item->product->image)) {
+                $imagePath = $item->product->image;
+            }
+
             return [
                 'product_id' => $item->product_id,
                 'name' => $item->product->nama,
                 'price' => $item->product->harga,
                 'quantity' => $item->quantity,
                 'subtotal' => $item->product->harga * $item->quantity,
-                'image' => $item->product->image ?? null,
+                'image' => $imagePath,
             ];
         })->toArray();
 
@@ -145,7 +152,7 @@ class OrderController extends Controller
             return back()->with('error', 'Pesanan tidak dapat dibatalkan lagi.');
         }
 
-        $order->update(['status' => 'dibatalkan']);
+        $order->update(['status' => 'dibatalkan', 'cancelled_by' => 'user']);
 
         return back()->with('success', 'Pesanan berhasil dibatalkan.');
     }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Cart;
 use App\Models\Order;
+use App\Models\Product;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -99,6 +100,7 @@ class OrderController extends Controller
                 'name' => $item->product->nama,
                 'price' => $item->product->harga,
                 'quantity' => $item->quantity,
+                'size' => $item->size,
                 'subtotal' => $item->product->harga * $item->quantity,
                 'image' => $imagePath,
             ];
@@ -115,6 +117,21 @@ class OrderController extends Controller
             'items' => $items,
             'payment_proof' => $paymentProofPath,
         ]);
+
+        // Reduce stock for each product size
+        foreach ($cartItems as $cartItem) {
+            $product = $cartItem->product;
+            $size = $cartItem->size;
+            $quantity = $cartItem->quantity;
+            
+            // Get stock column name for size
+            $stokColumn = 'stok_' . $size;
+            
+            // Update product stock
+            $currentStock = $product->$stokColumn ?? 0;
+            $newStock = max(0, $currentStock - $quantity);
+            $product->update([$stokColumn => $newStock]);
+        }
 
         Cart::where('user_id', $user->id)->delete();
 
@@ -150,6 +167,22 @@ class OrderController extends Controller
 
         if (in_array($order->status, ['selesai', 'dikirim', 'dibatalkan'])) {
             return back()->with('error', 'Pesanan tidak dapat dibatalkan lagi.');
+        }
+
+        // Restore stock for each product
+        if ($order->items && is_array($order->items)) {
+            foreach ($order->items as $orderItem) {
+                $product = Product::find($orderItem['product_id']);
+                if ($product && isset($orderItem['quantity'])) {
+                    $size = $orderItem['size'] ?? 39;
+                    $stokColumn = 'stok_' . $size;
+                    
+                    // Restore stock
+                    $currentStock = $product->$stokColumn ?? 0;
+                    $newStock = $currentStock + $orderItem['quantity'];
+                    $product->update([$stokColumn => $newStock]);
+                }
+            }
         }
 
         $order->update(['status' => 'dibatalkan', 'cancelled_by' => 'user']);

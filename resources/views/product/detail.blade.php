@@ -589,12 +589,13 @@
         function addToCart() {
             const quantity = parseInt(document.getElementById('quantity').value);
 
-            fetch('{{ route("cart.add") }}', {
+            fetch('/cart/add', {
                 method: 'POST',
-                redirect: 'manual',
+                credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : ''
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
                 },
                 body: JSON.stringify({
                     product_id: productId,
@@ -603,20 +604,14 @@
                 })
             })
             .then(response => {
-                if (!response.ok) {
-                    if (response.status === 401) {
-                        alert('Silakan login terlebih dahulu untuk menambahkan ke keranjang');
-                        window.location.href = '{{ route("login") }}';
-                        return Promise.reject(new Error('Unauthorized'));
-                    }
-                    if (response.status === 419) {
-                        alert('Sesi telah berakhir. Silakan refresh halaman dan coba lagi.');
-                        return Promise.reject(new Error('Session expired'));
-                    }
-                }
-                return parseJsonSafe(response).then(data => {
-                    if (!response.ok) {
-                        throw new Error(data.message || 'Gagal menambahkan ke keranjang');
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers.get('content-type'));
+                
+                return response.json().catch(() => {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }).then(data => {
+                    if (!response.ok && response.status >= 400) {
+                        throw new Error(data.message || data.error || 'Gagal menambahkan ke keranjang');
                     }
                     return data;
                 });
@@ -630,7 +625,7 @@
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
+                console.error('Error details:', error);
                 alert(error.message || 'Terjadi kesalahan saat menambahkan ke keranjang');
             });
         }
@@ -664,18 +659,19 @@
         function buyNow() {
             if (!isAuthenticated) {
                 alert('Silakan login terlebih dahulu untuk melakukan pembelian');
-                window.location.href = '{{ route("login") }}';
+                window.location.href = '/login';
                 return;
             }
 
             const quantity = parseInt(document.getElementById('quantity').value);
 
-            fetch('{{ route("cart.add") }}', {
+            fetch('/cart/add', {
                 method: 'POST',
-                redirect: 'manual',
+                credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : ''
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
                 },
                 body: JSON.stringify({
                     product_id: productId,
@@ -684,39 +680,32 @@
                 })
             })
             .then(response => {
-                if (!response.ok) {
-                    if (response.status === 401) {
-                        alert('Silakan login terlebih dahulu untuk melakukan pembelian');
-                        window.location.href = '{{ route("login") }}';
-                        return Promise.reject(new Error('Unauthorized'));
-                    }
-                    if (response.status === 419) {
-                        alert('Sesi telah berakhir. Silakan refresh halaman dan coba lagi.');
-                        return Promise.reject(new Error('Session expired'));
-                    }
-                }
-                return parseJsonSafe(response).then(data => {
-                    if (!response.ok) {
-                        throw new Error(data.message || 'Gagal menambahkan ke keranjang');
+                console.log('Response status:', response.status);
+                
+                return response.json().catch(() => {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }).then(data => {
+                    if (!response.ok && response.status >= 400) {
+                        throw new Error(data.message || data.error || 'Gagal menambahkan ke keranjang');
                     }
                     return data;
                 });
             })
             .then(data => {
                 if (data.success) {
-                    window.location.href = '{{ route("cart.index") }}';
+                    window.location.href = '/cart';
                 } else {
                     alert(data.message || 'Gagal menambahkan ke keranjang');
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
+                console.error('Error details:', error);
                 alert(error.message || 'Terjadi kesalahan saat menambahkan ke keranjang');
             });
         }
 
         function updateCartCount() {
-            fetch('{{ route("cart.count") }}')
+            fetch('/cart/count')
                 .then(response => response.json())
                 .then(data => {
                     const badge = document.getElementById('cart-count-badge');
@@ -733,14 +722,15 @@
         function toggleWishlist() {
             if (!isAuthenticated) {
                 alert('Silakan login terlebih dahulu');
-                window.location.href = '{{ route("login") }}';
+                window.location.href = '/login';
                 return;
             }
 
             const toggle = document.getElementById('wishlist-toggle');
 
-            fetch('{{ route("wishlist.toggle") }}', {
+            fetch('/wishlist/toggle', {
                 method: 'POST',
+                credentials: 'same-origin',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
@@ -770,7 +760,7 @@
         }
 
         function updateWishlistCount() {
-            fetch('{{ route("wishlist.count") }}')
+            fetch('/wishlist/count')
                 .then(response => response.json())
                 .then(data => {
                     const badge = document.getElementById('wishlist-count-badge');

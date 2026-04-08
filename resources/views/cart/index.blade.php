@@ -388,6 +388,85 @@
                 text-align: center;
             }
         }
+
+        @media (max-width: 768px) {
+            .contact-info {
+                position: static;
+                margin: 20px auto;
+                padding: 15px;
+                max-width: 300px;
+                background: rgba(0, 0, 0, 0.8);
+                border-radius: 8px;
+            }
+            .contact-info h6 {
+                font-size: 12px;
+            }
+            .contact-item {
+                margin-bottom: 10px;
+            }
+            .contact-item a,
+            .contact-item p {
+                font-size: 12px;
+            }
+        }
+    </style>
+    <style>
+        @media (min-width: 769px) {
+            .contact-info {
+                position: fixed !important;
+                bottom: 20px !important;
+                left: 20px !important;
+                margin: 0 !important;
+                max-width: 280px !important;
+                z-index: 1000 !important;
+                background: rgba(0, 0, 0, 0.9) !important;
+                backdrop-filter: blur(10px) !important;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.3) !important;
+                border-radius: 12px !important;
+                padding: 20px !important;
+            }
+            .contact-info h6 {
+                color: #fff !important;
+                font-weight: 700 !important;
+                margin-bottom: 15px !important;
+                font-size: 14px !important;
+                text-transform: uppercase !important;
+                letter-spacing: 0.5px !important;
+                margin-top: 0 !important;
+            }
+            .contact-item {
+                display: flex !important;
+                align-items: flex-start !important;
+                margin-bottom: 12px !important;
+                color: rgba(255,255,255,0.9) !important;
+            }
+            .contact-item:last-child {
+                margin-bottom: 0 !important;
+            }
+            .contact-item i {
+                margin-right: 10px !important;
+                margin-top: 2px !important;
+                width: 16px !important;
+                text-align: center !important;
+                color: #6c757d !important;
+            }
+            .contact-item a {
+                color: rgba(255,255,255,0.9) !important;
+                text-decoration: none !important;
+                font-size: 13px !important;
+                line-height: 1.4 !important;
+                transition: color 0.3s ease !important;
+            }
+            .contact-item a:hover {
+                color: #fff !important;
+                text-decoration: underline !important;
+            }
+            .contact-item p {
+                margin: 0 !important;
+                font-size: 13px !important;
+                line-height: 1.4 !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -652,5 +731,22 @@
             updateCartCount();
         });
     </script>
+
+    <!-- CONTACT INFO -->
+    <div class="contact-info">
+        <h6><i class="fas fa-phone"></i> Hubungi Kami</h6>
+        <div class="contact-item">
+            <i class="fas fa-envelope"></i>
+            <a href="mailto:sneakerid@gmail.com">sneakerid@gmail.com</a>
+        </div>
+        <div class="contact-item">
+            <i class="fab fa-whatsapp"></i>
+            <a href="https://wa.me/6285718071826" target="_blank">+62 857-1807-1826</a>
+        </div>
+        <div class="contact-item">
+            <i class="fas fa-map-marker-alt"></i>
+            <p>Jalan Swadaya 3 No 34</p>
+        </div>
+    </div>
 </body>
 </html>

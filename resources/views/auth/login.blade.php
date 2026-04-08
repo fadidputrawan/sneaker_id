@@ -52,7 +52,7 @@
             backdrop-filter: blur(10px);
             padding: 40px;
             border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3), 0 0 40px rgba(255, 0, 110, 0.2);
+            box-shadow: 0 20px 60px rgba(128, 128, 128, 0.3), 0 0 40px rgba(128, 128, 128, 0.2);
             width: 100%;
             max-width: 450px;
             animation: slideUp 0.6s ease;
@@ -235,7 +235,7 @@
 <body>
     <div class="login-container">
         <div class="login-header">
-            <h2><i class="fas fa-shoe-prints"></i> SNEAKER ID</h2>
+            <h2>SNEAKER ID</h2>
             <p>Silakan masuk ke akun Anda</p>
         </div>
 

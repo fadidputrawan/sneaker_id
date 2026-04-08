@@ -12,10 +12,74 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
 
 <style>
-.hero img{
-    width:100%;
-    max-height:970px;
-    object-fit:cover;
+.hero-slider{
+    position: relative;
+    width: 100%;
+    height: 970px;
+    overflow: hidden;
+}
+.hero-slide{
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transition: opacity 1.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.hero-slide.active{
+    opacity: 1;
+}
+.hero-slide img{
+    width: 100%;
+    max-height: 970px;
+    object-fit: cover;
+    display: block;
+}
+.hero-slider::-webkit-scrollbar{
+    display: none;
+}
+.slider-controls{
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    transform: translateY(-50%);
+    display: flex;
+    justify-content: space-between;
+    pointer-events: none;
+    padding: 0 20px;
+}
+.slider-button{
+    pointer-events: all;
+    background: rgba(0, 0, 0, 0.45);
+    border: none;
+    color: white;
+    width: 55px;
+    height: 55px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1.3rem;
+    transition: background 0.25s ease, transform 0.25s ease;
+}
+.slider-button:hover{
+    background: rgba(0, 0, 0, 0.65);
+    transform: scale(1.1);
+}
+
+.card {
+    border: 1px solid #e0e0e0 !important;
+    border-radius: 8px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+    transition: all 0.3s ease !important;
+    overflow: hidden;
+}
+.card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
+    transform: translateY(-2px);
 }
 
 /* Brand logo */
@@ -180,14 +244,23 @@
 </nav>
 
 <!-- BANNER -->
-<div class="hero">
-<img src="{{ asset('banner/banner.jpg') }}">
+<div class="hero-slider" id="heroSlider">
+    <div class="hero-slide active">
+        <img src="/banner/banner.jpg" alt="Banner 1" onerror="console.error('Banner 1 failed to load')">
+    </div>
+    <div class="hero-slide">
+        <img src="/banner/banner2.jpg" alt="Banner 2" onerror="console.error('Banner 2 failed to load')">
+    </div>
+    <div class="slider-controls">
+        <button type="button" class="slider-button" id="sliderPrev">&#8249;</button>
+        <button type="button" class="slider-button" id="sliderNext">&#8250;</button>
+    </div>
 </div>
 
 <!-- BRAND LOGO -->
 <div class="brand-logo text-center">
     @foreach($brands as $brand)
-    <div class="brand-item" onclick="filterByBrand('{{ $brand }}')">
+    <div class="brand-item" onclick="filterByBrand('{{ $brand }}', this)">
         @php
             $brandLower = strtolower($brand);
             // Map brand names to file names
@@ -244,7 +317,30 @@
 </div>
 
 <script>
-function filterByBrand(brand) {
+const baseAssetUrl = "{{ asset('') }}";
+
+function buildProductImagePath(image) {
+    if (!image) {
+        return baseAssetUrl + 'produk/sepatu1.jpg';
+    }
+
+    const normalizedImage = image.replace(/^\/+/, '');
+    if (normalizedImage.match(/^https?:\/\//)) {
+        return normalizedImage;
+    }
+
+    if (normalizedImage.startsWith('produk/')) {
+        return baseAssetUrl + normalizedImage;
+    }
+
+    if (normalizedImage.startsWith('uploads/')) {
+        return baseAssetUrl + normalizedImage;
+    }
+
+    return baseAssetUrl + 'uploads/' + normalizedImage;
+}
+
+function filterByBrand(brand, element) {
     const productsContainer = document.getElementById('productsContainer');
     const filterTitle = document.getElementById('filterTitle');
     const selectedBrandSpan = document.getElementById('selectedBrand');
@@ -257,13 +353,15 @@ function filterByBrand(brand) {
     });
     
     // Add active class to clicked brand item
-    event.target.closest('.brand-item').classList.add('active');
+    if (element) {
+        element.classList.add('active');
+    }
     
     // Show loading
     productsContainer.innerHTML = '<div class="col-12 loading"><i class="bi bi-hourglass-split"></i> Loading...</div>';
     
     // Fetch products by brand
-    fetch(`/api/products/brand/${brand}`)
+    fetch(`/api/products/brand/${encodeURIComponent(brand)}`)
         .then(response => response.json())
         .then(products => {
             selectedBrandSpan.textContent = brand;
@@ -277,12 +375,14 @@ function filterByBrand(brand) {
             
             let html = '';
             products.forEach(product => {
+                const productImage = product.image || (product.images && product.images.length ? product.images[0] : 'produk/sepatu1.jpg');
+                const imagePath = buildProductImagePath(productImage);
                 html += `
                     <div class="col-md-3 mb-4 product-card">
                         <div style="position: relative;">
                             <a href="/product/${product.id}" style="text-decoration: none; color: inherit;">
                                 <div class="card" style="cursor: pointer; height: 100%;">
-                                    <img src="{{ asset('') }}${product.image}" alt="${product.nama}">
+                                    <img src="${imagePath}" alt="${product.nama}">
                                     <div class="card-body">
                                         <h6>${product.nama}</h6>
                                         <p>Rp ${new Intl.NumberFormat('id-ID').format(product.harga)}</p>
@@ -444,6 +544,51 @@ function checkAllWishlistStatus() {
             .catch(error => console.error('Error:', error));
     });
 }
+
+// Banner slider button controls + auto slide
+document.addEventListener('DOMContentLoaded', function() {
+    const slider = document.getElementById('heroSlider');
+    if (!slider) {
+        console.error('Hero slider not found');
+        return;
+    }
+
+    const slides = slider.querySelectorAll('.hero-slide');
+    console.log('Found slides:', slides.length);
+
+    const prevButton = document.getElementById('sliderPrev');
+    const nextButton = document.getElementById('sliderNext');
+    let currentIndex = 0;
+
+    function showSlide(index) {
+        slides.forEach((slide, i) => {
+            if (i === index) {
+                slide.classList.add('active');
+            } else {
+                slide.classList.remove('active');
+            }
+        });
+        console.log('Showing slide:', index);
+    }
+
+    function scrollSlide(direction) {
+        currentIndex = (currentIndex + direction + slides.length) % slides.length;
+        showSlide(currentIndex);
+    }
+
+    // Show first slide initially
+    showSlide(0);
+
+    if (prevButton) prevButton.addEventListener('click', () => scrollSlide(-1));
+    if (nextButton) nextButton.addEventListener('click', () => scrollSlide(1));
+
+    // Auto slide
+    setInterval(() => {
+        scrollSlide(1);
+    }, 8000);
+
+    console.log('Slider initialized');
+});
 
 function performSearch(query) {
     const productsContainer = document.getElementById('productsContainer');

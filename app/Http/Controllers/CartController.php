@@ -63,12 +63,27 @@ class CartController extends Controller
             $cartItem->quantity += $quantity;
             $cartItem->save();
         } else {
-            Cart::create([
-                'user_id' => $userId,
-                'product_id' => $productId,
-                'quantity' => $quantity,
-                'size' => $size
-            ]);
+            // Check if product already exists for this user (different size)
+            // Due to unique constraint on (user_id, product_id), we need to update existing or merge
+            $existingProduct = Cart::where('user_id', $userId)
+                                    ->where('product_id', $productId)
+                                    ->first();
+            
+            if ($existingProduct) {
+                // Product already in cart with different size - update size and quantity
+                // Or update quantity only, keeping the size. We'll update quantity only.
+                $newQty = $existingProduct->quantity + $quantity;
+                $existingProduct->quantity = $newQty;
+                $existingProduct->size = $size; // Update to new size
+                $existingProduct->save();
+            } else {
+                Cart::create([
+                    'user_id' => $userId,
+                    'product_id' => $productId,
+                    'quantity' => $quantity,
+                    'size' => $size
+                ]);
+            }
         }
 
         $cartCount = Cart::where('user_id', $userId)->sum('quantity');

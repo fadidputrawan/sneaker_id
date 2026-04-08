@@ -6,6 +6,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pembayaran - Sneaker ID</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -674,14 +675,6 @@
                         </div>
                     </label>
 
-                    <label class="payment-option">
-                        <input type="radio" name="payment_method" value="cod">
-                        <div class="payment-info">
-                            <div class="payment-name">Cash On Delivery</div>
-                            <div style="font-size: 12px; color: #666;">Bayar saat produk tiba</div>
-                        </div>
-                    </label>
-
                     <div class="disclaimer">
                         <input type="checkbox" id="agree-terms" style="margin-right: 8px;">
                         <label for="agree-terms">Dengan memilih "Lanjut", saya menyetujui Syarat & Ketentuan serta Kebijakan Privasi Footlocker Indonesia</label>
@@ -988,6 +981,10 @@
             }, 1000);
         }
 
+        let createdOrderUrl = null;
+        let createdOrderId = null;
+        let orderCreationInProgress = false;
+
         function completePayment() {
             if (qrisTimer) clearInterval(qrisTimer);
             
@@ -1033,34 +1030,86 @@
             document.getElementById('pendingStep').style.display = 'block';
         }
 
+        function submitOrderToServer(paymentMethod, proofFile = null) {
+            if (orderCreationInProgress) {
+                return Promise.reject(new Error('Pesanan sedang diproses. Mohon tunggu.'));
+            }
+
+            orderCreationInProgress = true;
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            const formData = new FormData();
+            formData.append('payment_method', paymentMethod);
+
+            if (proofFile) {
+                formData.append('proof_file', proofFile);
+            }
+
+            return fetch('{{ route('orders.store') }}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json',
+                },
+                body: formData,
+            })
+            .then(async response => {
+                const data = await response.json();
+                orderCreationInProgress = false;
+
+                if (!response.ok) {
+                    throw new Error(data.message || (data.errors ? Object.values(data.errors).flat()[0] : 'Gagal membuat pesanan.'));
+                }
+
+                createdOrderUrl = data.show_url;
+                createdOrderId = data.id;
+                return data;
+            })
+            .catch(error => {
+                orderCreationInProgress = false;
+                throw error;
+            });
+        }
+
         function submitPaymentProof() {
             if (!proofFileSelected) {
                 alert('Silakan upload bukti pembayaran terlebih dahulu');
                 return;
             }
-            
-            // Get current transaction details from pending step
-            const transactionId = document.getElementById('transactionId').textContent;
-            const transactionDate = document.getElementById('transactionDate').textContent;
-            const itemsInfo = document.getElementById('itemsInfo').textContent;
-            const totalPayment = document.getElementById('totalPayment').textContent;
-            
-            // Update success step with same details
-            document.getElementById('successTransactionId').textContent = transactionId;
-            document.getElementById('successTransactionDate').textContent = transactionDate;
-            document.getElementById('successItemsInfo').textContent = itemsInfo;
-            document.getElementById('successTotalPayment').textContent = totalPayment;
-            
-            // Switch from pending step to success step
-            document.getElementById('pendingStep').style.display = 'none';
-            document.getElementById('successStep').style.display = 'block';
+
+            const proofFile = document.getElementById('proofFile').files[0];
+            submitOrderToServer('qris', proofFile)
+                .then(data => {
+                    const transactionId = document.getElementById('transactionId').textContent;
+                    const transactionDate = document.getElementById('transactionDate').textContent;
+                    const itemsInfo = document.getElementById('itemsInfo').textContent;
+                    const totalPayment = document.getElementById('totalPayment').textContent;
+
+                    document.getElementById('successTransactionId').textContent = transactionId;
+                    document.getElementById('successTransactionDate').textContent = transactionDate;
+                    document.getElementById('successItemsInfo').textContent = itemsInfo;
+                    document.getElementById('successTotalPayment').textContent = totalPayment;
+                    document.getElementById('successOrderId').textContent = 'ORD-' + String(data.id).padStart(6, '0');
+                    document.getElementById('successPaymentMethod').textContent = data.payment_method.toUpperCase();
+                    document.getElementById('successOrderDate').textContent = data.created_at;
+                    document.getElementById('successMessage').textContent = 'Pesanan QRIS Anda telah kami terima. Mohon tunggu konfirmasi pembayaran.';
+
+                    document.getElementById('pendingStep').style.display = 'none';
+                    document.getElementById('successStep').style.display = 'block';
+                })
+                .catch(error => {
+                    alert(error.message || 'Terjadi masalah saat membuat pesanan.');
+                });
         }
 
         function finalizeOrder() {
-            // Close modal
             closeQRISModal();
-            
-            // Redirect to dashboard immediately
+
+            if (createdOrderUrl) {
+                window.location.href = createdOrderUrl;
+                return;
+            }
+
+            // Redirect to dashboard if order detail tidak tersedia
             setTimeout(() => {
                 window.location.href = '{{ route("dashboard") }}';
             }, 300);
@@ -1075,27 +1124,31 @@
             }
             
             const paymentMethod = document.querySelector('input[name="payment_method"]:checked').value;
-            
-            // Show success modal with order details
-            const orderId = 'ORD-' + Math.random().toString(36).substr(2, 6).toUpperCase();
-            const today = new Date();
-            const dateStr = today.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
-            
-            document.getElementById('successOrderId').textContent = orderId;
-            document.getElementById('successPaymentMethod').textContent = paymentMethod.toUpperCase();
-            document.getElementById('successOrderDate').textContent = dateStr;
-            
-            if (paymentMethod === 'qris') {
-                document.getElementById('successMessage').textContent = 'Pesanan QRIS Anda telah kami terima. Mohon tunggu konfirmasi pembayaran.';
-            } else {
-                document.getElementById('successMessage').textContent = 'Pesanan COD Anda telah kami terima. Driver kami akan segera menghubungi Anda.';
-            }
-            
-            // Show modal
-            document.getElementById('successModal').classList.add('active');
+
+            submitOrderToServer(paymentMethod)
+                .then(data => {
+                    const today = new Date();
+                    const dateStr = today.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+
+                    document.getElementById('successOrderId').textContent = 'ORD-' + String(data.id).padStart(6, '0');
+                    document.getElementById('successPaymentMethod').textContent = data.payment_method.toUpperCase();
+                    document.getElementById('successOrderDate').textContent = data.created_at;
+                    document.getElementById('successMessage').textContent = data.payment_method === 'qris'
+                        ? 'Pesanan QRIS Anda telah kami terima. Mohon tunggu konfirmasi pembayaran.'
+                        : 'Pesanan COD Anda telah kami terima. Driver kami akan segera menghubungi Anda.';
+
+                    document.getElementById('successModal').classList.add('active');
+                })
+                .catch(error => {
+                    alert(error.message || 'Terjadi masalah saat membuat pesanan.');
+                });
         }
 
         function closeSuccessAndRedirect() {
+            if (createdOrderUrl) {
+                window.location.href = createdOrderUrl;
+                return;
+            }
             window.location.href = '{{ route("dashboard") }}';
         }
 

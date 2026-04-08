@@ -5,6 +5,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -67,6 +68,8 @@
         /* Main Wrapper */
         .profile-wrapper {
             display: flex;
+            flex-wrap: nowrap;
+            align-items: flex-start;
             min-height: calc(100vh - 70px);
         }
 
@@ -74,7 +77,10 @@
         .sidebar {
             background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
             padding: 30px 0;
-            width: 25%;
+            width: 260px;
+            flex: 0 0 260px;
+            max-width: 260px;
+            min-width: 260px;
             min-height: calc(100vh - 70px);
             position: sticky;
             top: 70px;
@@ -85,7 +91,6 @@
             color: #fff;
             padding: 0 20px 20px 20px;
             font-weight: 700;
-            border-bottom: 2px solid rgba(255,255,255,0.2);
             margin-bottom: 0;
             font-size: 14px;
         }
@@ -93,6 +98,7 @@
         .sidebar-menu {
             list-style: none;
             margin-top: 20px;
+            padding-left: 0;
         }
 
         .sidebar-menu li {
@@ -103,25 +109,25 @@
             display: flex;
             align-items: center;
             padding: 15px 20px;
-            color: rgba(255,255,255,0.7);
-            text-decoration: none;
+            color: rgba(255,255,255,0.9) !important;
+            text-decoration: none !important;
             transition: all 0.3s ease;
             border-left: 4px solid transparent;
             font-size: 15px;
         }
 
-        .sidebar-menu a:hover {
-            background-color: rgba(255,255,255,0.1);
-            color: #fff;
-            border-left-color: #ffc107;
+        .sidebar-menu a:hover,
+        .sidebar-menu a.active,
+        .sidebar-menu a:focus,
+        .sidebar-menu a:visited {
+            background-color: #6c757d;
+            color: #fff !important;
+            font-weight: 600;
+            border-left-color: #6c757d;
+            text-decoration: none !important;
         }
 
-        .sidebar-menu a.active {
-            background-color: #ffc107;
-            color: #1a1a1a;
-            font-weight: 600;
-            border-left-color: #ffc107;
-        }
+        .sidebar-menu a:focus-visible { outline: none; }
 
         .sidebar-menu i {
             margin-right: 15px;
@@ -132,6 +138,7 @@
         /* Cart Container */
         .profile-content {
             flex: 1;
+            min-width: 0;
             padding: 40px;
         }
 
@@ -387,7 +394,7 @@
     <!-- NAVBAR -->
     <nav class="navbar">
         <a href="{{ route('dashboard') }}" class="navbar-brand">
-            <i class="bi bi-play-fill"></i> SNEAKER ID
+            <i class="fas fa-shoe-prints"></i> SNEAKER ID
         </a>
 
         <div class="navbar-icons">
@@ -407,28 +414,28 @@
     <div class="profile-wrapper">
         <!-- Sidebar -->
         <div class="sidebar">
-            <h5>Akun Saya</h5>
+            <h5><i class="fas fa-user-circle"></i> Akun Saya</h5>
             <ul class="sidebar-menu">
                 <li>
-                    <a href="{{ route('profile') }}">
+                    <a href="{{ route('profile') }}" class="{{ request()->routeIs('profile') ? 'active' : '' }}">
                         <i class="bi bi-person"></i>
                         Informasi Akun
                     </a>
                 </li>
                 <li>
-                    <a href="{{ route('profile') }}">
+                    <a href="{{ route('orders.index') }}" class="{{ request()->routeIs('orders.*') ? 'active' : '' }}">
                         <i class="bi bi-box-seam"></i>
                         Pesanan
                     </a>
                 </li>
                 <li>
-                    <a href="{{ route('wishlist') }}">
+                    <a href="{{ route('wishlist') }}" class="{{ request()->routeIs('wishlist') ? 'active' : '' }}">
                         <i class="bi bi-heart"></i>
                         Wishlist
                     </a>
                 </li>
                 <li>
-                    <a href="{{ route('cart.index') }}" class="active">
+                    <a href="{{ route('cart.index') }}" class="{{ request()->routeIs('cart.*') ? 'active' : '' }}">
                         <i class="bi bi-bag"></i>
                         Keranjang
                     </a>

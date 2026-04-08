@@ -60,6 +60,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/checkout', [OrderController::class, 'checkout'])->name('checkout');
 
     Route::get('/payment', [OrderController::class, 'payment'])->name('payment');
+    Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
+    Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
+    Route::get('/orders/{id}', [OrderController::class, 'show'])->name('orders.show');
+    Route::post('/orders/{id}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel');
 
     Route::post('/cart/update-quantity', [CartController::class, 'updateQuantity'])->name('cart.updateQuantity');
 
@@ -129,6 +133,22 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])
         ->name('admin.dashboard');
+
+    Route::get('/admin/orders/{id}', [AdminController::class, 'showOrder'])->name('admin.order.show');
+    Route::post('/admin/orders/{id}/status', [AdminController::class, 'updateOrderStatus'])->name('admin.order.status');
+    Route::get('/admin/produk', [AdminController::class, 'produk'])->name('admin.produk.index');
+    Route::post('/admin/produk', [AdminController::class, 'storeProduk'])->name('admin.produk.store');
+    Route::put('/admin/produk/{id}', [AdminController::class, 'updateProduk'])->name('admin.produk.update');
+    Route::delete('/admin/produk/{id}', [AdminController::class, 'destroyProduk'])->name('admin.produk.destroy');
+    Route::get('/admin/pesanan', [AdminController::class, 'pesanan'])->name('admin.pesanan.index');
+    Route::get('/admin/user', [AdminController::class, 'users'])->name('admin.user.index');
+    Route::get('/admin/user/{id}/edit', [AdminController::class, 'editUser'])->name('admin.user.edit');
+    Route::put('/admin/user/{id}', [AdminController::class, 'updateUser'])->name('admin.user.update');
+    Route::delete('/admin/user/{id}', [AdminController::class, 'destroyUser'])->name('admin.user.destroy');
+    Route::get('/admin/petugas', [AdminController::class, 'petugas'])->name('admin.petugas.index');
+    Route::get('/admin/petugas/{id}/edit', [AdminController::class, 'editPetugas'])->name('admin.petugas.edit');
+    Route::put('/admin/petugas/{id}', [AdminController::class, 'updatePetugas'])->name('admin.petugas.update');
+    Route::delete('/admin/petugas/{id}', [AdminController::class, 'destroyPetugas'])->name('admin.petugas.destroy');
 
 });
 

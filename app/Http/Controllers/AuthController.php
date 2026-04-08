@@ -33,6 +33,9 @@ class AuthController extends Controller
         $credentials['role'] = 'user';
 
         if (Auth::attempt($credentials)) {
+            // Set status menjadi active saat login
+            Auth::user()->update(['status' => 'active']);
+            
             $request->session()->regenerate();
             return redirect()->route('dashboard');
         }
@@ -73,6 +76,9 @@ class AuthController extends Controller
         $credentials['role'] = 'admin';
 
         if (Auth::attempt($credentials)) {
+            // Set status menjadi active saat login
+            Auth::user()->update(['status' => 'active']);
+            
             $request->session()->regenerate();
             return redirect()->route('admin.dashboard');
         }
@@ -91,6 +97,9 @@ class AuthController extends Controller
         $credentials['role'] = 'petugas';
 
         if (Auth::attempt($credentials)) {
+            // Set status menjadi active saat login
+            Auth::user()->update(['status' => 'active']);
+            
             $request->session()->regenerate();
             return redirect()->route('petugas.dashboard');
         }
@@ -101,6 +110,11 @@ class AuthController extends Controller
     // ================== LOGOUT ==================
     public function logout(Request $request)
     {
+        // Set status menjadi inactive saat logout
+        if (Auth::user()) {
+            Auth::user()->update(['status' => 'inactive']);
+        }
+        
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();

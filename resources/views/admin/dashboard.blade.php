@@ -13,7 +13,8 @@
         }
 
         body{
-            background:#4f4f4f;
+            background:#f4f6f9;
+            color:#333;
             min-height:100vh;
         }
 
@@ -21,42 +22,44 @@
             width:100%;
             min-height:100vh;
             display:flex;
-            background:#e5e5e5;
+            background:transparent;
         }
 
         /* ================= SIDEBAR ================= */
 
         .sidebar{
             width:240px;
-            background:#d0d0d0;
-            padding:25px 20px;
-            border-right:2px solid #999;
+            background:#f8f9fa;
+            padding:30px 20px;
+            border-right:1px solid #dde2e6;
         }
 
         .logo{
             font-size:18px;
             font-weight:bold;
             margin-bottom:35px;
+            color:#1f2937;
         }
 
         .menu a{
             display:block;
-            padding:12px 10px;
+            padding:12px 14px;
             text-decoration:none;
-            color:#000;
+            color:#1f2937;
             margin-bottom:8px;
-            border-radius:6px;
+            border-radius:8px;
             transition:0.2s;
         }
 
         .menu a:hover{
-            background:#bcbcbc;
+            background:#e2e8f0;
         }
 
         .menu a.active{
-            background:#a8a8a8;
-            font-weight:bold;
-            border-left:5px solid #000;
+            background:#dbeafe;
+            font-weight:700;
+            border-left:4px solid #2563eb;
+            color:#111827;
         }
 
         /* ================= MAIN ================= */
@@ -140,6 +143,11 @@
             background:#f1f1f1;
         }
 
+        .order-id-link {
+            color:#333;
+            text-decoration:none;
+        }
+
         tr:hover{
             background:#f9f9f9;
         }
@@ -152,7 +160,7 @@
 
     <!-- ================= SIDEBAR ================= -->
     <div class="sidebar">
-        <div class="logo">👟 SNEAKER ID</div>
+        <div class="logo">SNEAKER ID</div>
 
         <div class="menu">
             <a href="{{ route('admin.dashboard') }}"
@@ -160,25 +168,25 @@
                Dashboard
             </a>
 
-            <a href="#"
-               class="{{ request()->is('admin/produk*') ? 'active' : '' }}">
-               Kelola Produk
-            </a>
+                <a href="{{ route('admin.produk.index') }}"
+                    class="{{ request()->is('admin/produk*') ? 'active' : '' }}">
+                    Kelola Produk
+                </a>
 
-            <a href="#"
-               class="{{ request()->is('admin/pesanan*') ? 'active' : '' }}">
-               Kelola Pesanan
-            </a>
+                <a href="{{ route('admin.pesanan.index') }}"
+                    class="{{ request()->is('admin/pesanan*') ? 'active' : '' }}">
+                    Kelola Pesanan
+                </a>
 
-            <a href="#"
-               class="{{ request()->is('admin/user*') ? 'active' : '' }}">
-               Kelola User
-            </a>
+                <a href="{{ route('admin.user.index') }}"
+                    class="{{ request()->is('admin/user*') ? 'active' : '' }}">
+                    Kelola User
+                </a>
 
-            <a href="#"
-               class="{{ request()->is('admin/petugas*') ? 'active' : '' }}">
-               Kelola Petugas
-            </a>
+                <a href="{{ route('admin.petugas.index') }}"
+                    class="{{ request()->is('admin/petugas*') ? 'active' : '' }}">
+                    Kelola Petugas
+                </a>
         </div>
     </div>
 
@@ -221,6 +229,7 @@
         </div>
 
         <!-- TABEL -->
+        @if($transaksiTerbaru->isNotEmpty())
         <div class="table-box">
             <h4>Transaksi Terbaru</h4>
 
@@ -235,30 +244,19 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td>#001</td>
-                        <td>Aku</td>
-                        <td>1.200.000</td>
-                        <td>02/02/2026</td>
-                        <td>Dibatalkan</td>
-                    </tr>
-                    <tr>
-                        <td>#002</td>
-                        <td>Ryan</td>
-                        <td>2.200.000</td>
-                        <td>20/01/2026</td>
-                        <td>Diproses</td>
-                    </tr>
-                    <tr>
-                        <td>#003</td>
-                        <td>Sarul</td>
-                        <td>1.500.000</td>
-                        <td>31/01/2026</td>
-                        <td>Dikirim</td>
-                    </tr>
+                    @foreach($transaksiTerbaru as $order)
+                        <tr>
+                            <td><a href="{{ route('admin.order.show', $order->id) }}" class="order-id-link">{{ str_pad($order->id, 3, '0', STR_PAD_LEFT) }}</a></td>
+                            <td>{{ $order->user?->name ?? $order->nama }}</td>
+                            <td>{{ number_format($order->total, 0, ',', '.') }}</td>
+                            <td>{{ $order->created_at->format('d/m/Y') }}</td>
+                            <td>{{ ucfirst($order->status) }}</td>
+                        </tr>
+                    @endforeach
                 </tbody>
             </table>
         </div>
+        @endif
 
     </div>
 

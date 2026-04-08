@@ -39,27 +39,34 @@
         .profile-wrapper {
             display: flex;
             min-height: calc(100vh - 80px);
+            flex-wrap: nowrap;
+            align-items: flex-start;
         }
         
         .sidebar {
             background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
             padding: 30px 0;
+            width: 260px;
+            flex: 0 0 260px;
+            max-width: 260px;
+            min-width: 260px;
             min-height: calc(100vh - 80px);
             position: sticky;
             top: 80px;
+            flex-shrink: 0;
         }
         
         .sidebar h5 {
             color: #fff;
             padding: 0 20px 20px 20px;
             font-weight: 700;
-            border-bottom: 2px solid rgba(255,255,255,0.2);
             margin-bottom: 0;
         }
         
         .sidebar-menu {
             list-style: none;
             margin-top: 20px;
+            padding-left: 0;
         }
         
         .sidebar-menu li {
@@ -70,25 +77,25 @@
             display: flex;
             align-items: center;
             padding: 15px 20px;
-            color: rgba(255,255,255,0.7);
-            text-decoration: none;
+            color: rgba(255,255,255,0.9) !important;
+            text-decoration: none !important;
             transition: all 0.3s ease;
             border-left: 4px solid transparent;
             font-size: 15px;
         }
         
-        .sidebar-menu a:hover {
-            background-color: rgba(255,255,255,0.1);
-            color: #fff;
-            border-left-color: #ffc107;
-        }
-        
-        .sidebar-menu a.active {
-            background-color: #ffc107;
-            color: #1a1a1a;
+        .sidebar-menu a:hover,
+        .sidebar-menu a.active,
+        .sidebar-menu a:focus,
+        .sidebar-menu a:visited {
+            background-color: #6c757d;
+            color: #fff !important;
             font-weight: 600;
-            border-left-color: #ffc107;
+            border-left-color: #6c757d;
+            text-decoration: none !important;
         }
+
+        .sidebar-menu a:focus-visible { outline: none; }
         
         .sidebar-menu i {
             margin-right: 15px;
@@ -98,6 +105,7 @@
         
         .profile-content {
             flex: 1;
+            min-width: 0;
             padding: 40px;
             overflow-y: auto;
         }
@@ -135,7 +143,7 @@
             font-weight: 700;
             margin-bottom: 20px;
             padding-bottom: 15px;
-            border-bottom: 2px solid #ffc107;
+            border-bottom: 2px solid #6c757d;
             display: inline-block;
         }
         
@@ -150,7 +158,7 @@
             padding: 15px;
             background: #f8f9fa;
             border-radius: 8px;
-            border-left: 4px solid #ffc107;
+            border-left: 4px solid #6c757d;
         }
         
         .info-item label {
@@ -176,8 +184,8 @@
         }
         
         .btn-edit {
-            background-color: #ffc107;
-            color: #1a1a1a;
+            background-color: #6c757d;
+            color: #fff;
             border: none;
             padding: 12px 30px;
             border-radius: 8px;
@@ -185,12 +193,12 @@
             transition: all 0.3s ease;
             margin-top: 20px;
         }
-        
+
         .btn-edit:hover {
-            background-color: #ffb300;
-            color: #1a1a1a;
+            background-color: #5a6268;
+            color: #fff;
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(255,193,7,0.3);
+            box-shadow: 0 5px 15px rgba(108,117,125,0.25);
         }
         
 
@@ -266,26 +274,26 @@
     <!-- MAIN CONTENT -->
     <div class="profile-wrapper">
         <!-- SIDEBAR -->
-        <div class="sidebar col-md-3">
+        <div class="sidebar">
             <h5><i class="fas fa-user-circle"></i> Akun Saya</h5>
             <ul class="sidebar-menu">
-                <li><a href="{{ route('profile') }}" class="active">
+                <li><a href="{{ route('profile') }}" class="{{ request()->routeIs('profile') ? 'active' : '' }}">
                     <i class="fas fa-user"></i> Informasi Akun
                 </a></li>
-                <li><a href="{{ route('dashboard') }}">
+                <li><a href="{{ route('orders.index') }}" class="{{ request()->routeIs('orders.*') ? 'active' : '' }}">
                     <i class="fas fa-shopping-bag"></i> Pesanan
                 </a></li>
-                <li><a href="{{ route('wishlist') }}">
+                <li><a href="{{ route('wishlist') }}" class="{{ request()->routeIs('wishlist') ? 'active' : '' }}">
                     <i class="fas fa-heart"></i> Wishlist
                 </a></li>
-                <li><a href="{{ route('cart.index') }}">
+                <li><a href="{{ route('cart.index') }}" class="{{ request()->routeIs('cart.*') ? 'active' : '' }}">
                     <i class="fas fa-shopping-cart"></i> Keranjang
                 </a></li>
             </ul>
         </div>
 
         <!-- CONTENT -->
-        <div class="profile-content col-md-9">
+        <div class="profile-content">
             <div class="profile-header">
                 <h2>Profil Akun</h2>
                 <p>Kelola informasi akun dan pengaturan pribadi Anda</p>

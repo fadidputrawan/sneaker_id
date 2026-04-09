@@ -149,6 +149,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/admin/petugas/{id}/edit', [AdminController::class, 'editPetugas'])->name('admin.petugas.edit');
     Route::put('/admin/petugas/{id}', [AdminController::class, 'updatePetugas'])->name('admin.petugas.update');
     Route::delete('/admin/petugas/{id}', [AdminController::class, 'destroyPetugas'])->name('admin.petugas.destroy');
+    Route::get('/admin/laporan', [AdminController::class, 'laporan'])->name('admin.laporan');
+    Route::get('/admin/laporan-penjualan-bulanan', [AdminController::class, 'laporanPenjualanBulanan'])->name('admin.laporan-penjualan-bulanan');
+    Route::get('/admin/download-laporan-penjualan-pdf', [AdminController::class, 'downloadLaporanPenjualanPdf'])->name('admin.download-laporan-penjualan-pdf');
 
 });
 
@@ -175,6 +178,9 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/petugas/laporan', [PetugasController::class, 'laporan'])
         ->name('petugas.laporan');
+
+    Route::get('/petugas/download-transaksi-pdf', [PetugasController::class, 'downloadTransaksiPdf'])
+        ->name('petugas.download-transaksi-pdf');
 
     Route::get('/petugas/produk', [PetugasController::class, 'produk'])
         ->name('petugas.produk.index');

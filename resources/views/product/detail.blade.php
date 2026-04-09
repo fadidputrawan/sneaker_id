@@ -411,22 +411,22 @@
                     <div class="thumbnails">
                         @php
                             $images = is_array($product->images) ? $product->images : (json_decode($product->images, true) ?? []);
-                            $defaultImage = !empty($images) ? asset('uploads/' . $images[0]) : asset('produk/sepatu1.jpg');
+                            $defaultImage = !empty($images) ? '/uploads/' . $images[0] : '/produk/sepatu1.jpg';
                         @endphp
                         @if(!empty($images))
                             @foreach($images as $index => $image)
-                                <div class="thumbnail @if($index === 0) active @endif" data-src="{{ asset('uploads/' . $image) }}" onclick="changeMainImage(this.dataset.src)">
-                                    <img src="{{ asset('uploads/' . $image) }}" alt="{{ $product->nama }} - View {{ $index + 1 }}" data-fallback="{{ asset('produk/sepatu1.jpg') }}" onload="if(!this.complete) this.src=this.dataset.fallback">
+                                <div class="thumbnail @if($index === 0) active @endif" data-src="/uploads/{{ $image }}" onclick="changeMainImage(this, '/uploads/{{ $image }}')">
+                                    <img src="/uploads/{{ $image }}" alt="{{ $product->nama }} - View {{ $index + 1 }}" data-fallback="/produk/sepatu1.jpg" onload="if(!this.complete) this.src=this.dataset.fallback">
                                 </div>
                             @endforeach
                         @else
-                            <div class="thumbnail active" data-src="{{ asset('produk/sepatu1.jpg') }}" onclick="changeMainImage(this.dataset.src)">
-                                <img src="{{ asset('produk/sepatu1.jpg') }}" alt="{{ $product->nama }}">
+                            <div class="thumbnail active" data-src="/produk/sepatu1.jpg" onclick="changeMainImage(this, '/produk/sepatu1.jpg')">
+                                <img src="/produk/sepatu1.jpg" alt="{{ $product->nama }}">
                             </div>
                         @endif
                     </div>
                     <div class="main-image">
-                        <img id="mainImage" src="{{ $defaultImage }}" alt="{{ $product->nama }}" data-fallback="{{ asset('produk/sepatu1.jpg') }}" onload="if(!this.complete) this.src=this.dataset.fallback">
+                        <img id="mainImage" src="{{ $defaultImage }}" alt="{{ $product->nama }}" data-fallback="/produk/sepatu1.jpg" onload="if(!this.complete) this.src=this.dataset.fallback">
                     </div>
                 </div>
             </div>
@@ -545,14 +545,14 @@
         // Size stocks data from product
         const sizeStocks = JSON.parse(document.querySelector('meta[name="size-stocks"]').content);
         
-        function changeMainImage(src) {
+        function changeMainImage(element, src) {
             document.getElementById('mainImage').src = src;
             
             // Update active thumbnail
             document.querySelectorAll('.thumbnail').forEach(thumb => {
                 thumb.classList.remove('active');
             });
-            event.target.closest('.thumbnail').classList.add('active');
+            element.classList.add('active');
         }
 
         function selectSize(button, size) {

@@ -45,15 +45,14 @@
 		</div>
 
 		<div class="cards">
-			<div class="card"><h4>Total Pesanan</h4><p>0</p></div>
-			<div class="card"><h4>Total Revenue</h4><p>Rp 0</p></div>
-			<div class="card"><h4>Pesanan Selesai</h4><p>0</p></div>
-			<div class="card"><h4>Pesanan Dibatalkan</h4><p>0</p></div>
+			<div class="card"><h4>Total Pesanan</h4><p>{{ $totalPesanan }}</p></div>
+			<div class="card"><h4>Total Revenue</h4><p>Rp {{ number_format($totalRevenue, 0, ',', '.') }}</p></div>
+			<div class="card"><h4>Pesanan Selesai</h4><p>{{ $pesananSelesai }}</p></div>
+			<div class="card"><h4>Pesanan Dibatalkan</h4><p>{{ $pesananDibatalkan }}</p></div>
 		</div>
 
 		<div class="table-box">
-			<h4>Ringkasan Laporan</h4>
-			<p style="color:#666;margin-bottom:15px;">Fitur laporan akan segera tersedia. Untuk saat ini, Anda dapat melihat detail pesanan di halaman Kelola Pesanan.</p>
+			<h4>Ringkasan Laporan Bulanan</h4>
 			<table>
 				<thead>
 					<tr>
@@ -66,10 +65,111 @@
 				</thead>
 				<tbody>
 					<tr>
-						<td colspan="5" style="text-align:center;color:#999;">Belum ada data laporan</td>
+						<td>{{ $bulanIni['periode'] }}</td>
+						<td>{{ $bulanIni['total_pesanan'] }}</td>
+						<td>Rp {{ number_format($bulanIni['total_revenue'], 0, ',', '.') }}</td>
+						<td>{{ $bulanIni['pesanan_selesai'] }}</td>
+						<td>{{ $bulanIni['pesanan_dibatalkan'] }}</td>
 					</tr>
 				</tbody>
 			</table>
+		</div>
+
+		<div class="table-box" style="margin-top: 30px;">
+			<h4>Laporan Harian (7 Hari Terakhir)</h4>
+			<table>
+				<thead>
+					<tr>
+						<th>Tanggal</th>
+						<th>Total Pesanan</th>
+						<th>Total Revenue</th>
+						<th>Pesanan Selesai</th>
+						<th>Pesanan Dibatalkan</th>
+					</tr>
+				</thead>
+				<tbody>
+					@forelse($dailyReports as $report)
+					<tr>
+						<td>{{ $report['periode'] }}</td>
+						<td>{{ $report['total_pesanan'] }}</td>
+						<td>Rp {{ number_format($report['total_revenue'], 0, ',', '.') }}</td>
+						<td>{{ $report['pesanan_selesai'] }}</td>
+						<td>{{ $report['pesanan_dibatalkan'] }}</td>
+					</tr>
+					@empty
+					<tr>
+						<td colspan="5" style="text-align:center;color:#999;">Belum ada data laporan harian</td>
+					</tr>
+					@endforelse
+				</tbody>
+			</table>
+		</div>
+
+		<div class="table-box" style="margin-top: 30px;">
+			<h4>Top Customers (Berdasarkan Revenue)</h4>
+			<table>
+				<thead>
+					<tr>
+						<th>Nama Customer</th>
+						<th>Total Pesanan</th>
+						<th>Total Nilai Pesanan</th>
+						<th>Total Revenue</th>
+					</tr>
+				</thead>
+				<tbody>
+					@forelse($topCustomers as $customer)
+					<tr>
+						<td>{{ $customer->nama }}</td>
+						<td>{{ $customer->total_pesanan }}</td>
+						<td>Rp {{ number_format($customer->total_nilai_pesanan, 0, ',', '.') }}</td>
+						<td>Rp {{ number_format($customer->total_revenue, 0, ',', '.') }}</td>
+					</tr>
+					@empty
+					<tr>
+						<td colspan="4" style="text-align:center;color:#999;">Belum ada data customer</td>
+					</tr>
+					@endforelse
+				</tbody>
+			</table>
+		</div>
+
+		<div class="table-box" style="margin-top: 30px;">
+			<h4>Detail Pesanan Terbaru per Customer</h4>
+			@forelse($recentOrdersByUser as $userId => $orders)
+				<h5 style="margin-top: 20px; margin-bottom: 10px; color: #333;">{{ $orders->first()->nama }} ({{ $orders->count() }} pesanan)</h5>
+				<table style="margin-bottom: 20px;">
+					<thead>
+						<tr>
+							<th>ID Pesanan</th>
+							<th>Tanggal</th>
+							<th>Total</th>
+							<th>Status</th>
+							<th>Metode Pembayaran</th>
+						</tr>
+					</thead>
+					<tbody>
+						@foreach($orders as $order)
+						<tr>
+							<td>#{{ $order->id }}</td>
+							<td>{{ $order->created_at->format('d/m/Y H:i') }}</td>
+							<td>Rp {{ number_format($order->total, 0, ',', '.') }}</td>
+							<td>
+								<span style="padding: 4px 8px; border-radius: 4px; font-size: 12px;
+									@if($order->status == 'selesai') background: #d4edda; color: #155724;
+									@elseif($order->status == 'dibatalkan') background: #f8d7da; color: #721c24;
+									@elseif($order->status == 'dikirim') background: #fff3cd; color: #856404;
+									@else background: #e2e3e5; color: #383d41; @endif">
+									{{ ucfirst($order->status) }}
+								</span>
+							</td>
+							<td>{{ ucfirst($order->payment_method) }}</td>
+						</tr>
+						@endforeach
+					</tbody>
+				</table>
+			@empty
+				<p style="text-align:center;color:#999;margin:20px 0;">Belum ada data pesanan</p>
+			@endforelse
 		</div>
 	</div>
 </div>

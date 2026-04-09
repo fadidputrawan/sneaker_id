@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class PetugasController extends Controller
 {
@@ -70,9 +71,90 @@ class PetugasController extends Controller
         return back()->with('error', 'Aksi tidak valid untuk status pesanan ini.');
     }
 
+    public function downloadTransaksiPdf()
+    {
+        $transaksiTerbaru = Order::with('user')->latest()->take(10)->get();
+
+        $pdf = Pdf::loadView('petugas.transaksi-pdf', compact('transaksiTerbaru'));
+        
+        return $pdf->download('Transaksi-Terbaru-' . now()->format('d-m-Y-H-i-s') . '.pdf');
+    }
+
     public function laporan()
     {
-        return view('petugas.laporan');
+        // Statistik umum
+        $totalPesanan = Order::count();
+        $totalRevenue = Order::where('status', 'selesai')->sum('total');
+        $pesananSelesai = Order::where('status', 'selesai')->count();
+        $pesananDibatalkan = Order::where('status', 'dibatalkan')->count();
+
+        // Data laporan per periode (bulan ini)
+        $currentMonth = now()->month;
+        $currentYear = now()->year;
+
+        $bulanIni = [
+            'total_pesanan' => Order::whereMonth('created_at', $currentMonth)
+                                   ->whereYear('created_at', $currentYear)
+                                   ->count(),
+            'total_revenue' => Order::where('status', 'selesai')
+                                   ->whereMonth('created_at', $currentMonth)
+                                   ->whereYear('created_at', $currentYear)
+                                   ->sum('total'),
+            'pesanan_selesai' => Order::where('status', 'selesai')
+                                     ->whereMonth('created_at', $currentMonth)
+                                     ->whereYear('created_at', $currentYear)
+                                     ->count(),
+            'pesanan_dibatalkan' => Order::where('status', 'dibatalkan')
+                                        ->whereMonth('created_at', $currentMonth)
+                                        ->whereYear('created_at', $currentYear)
+                                        ->count(),
+            'periode' => 'Bulan ' . now()->format('F Y')
+        ];
+
+        // Data laporan harian (7 hari terakhir)
+        $dailyReports = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $date = now()->subDays($i);
+            $dailyReports[] = [
+                'periode' => $date->format('d/m/Y'),
+                'total_pesanan' => Order::whereDate('created_at', $date)->count(),
+                'total_revenue' => Order::where('status', 'selesai')
+                                       ->whereDate('created_at', $date)
+                                       ->sum('total'),
+                'pesanan_selesai' => Order::where('status', 'selesai')
+                                         ->whereDate('created_at', $date)
+                                         ->count(),
+                'pesanan_dibatalkan' => Order::where('status', 'dibatalkan')
+                                            ->whereDate('created_at', $date)
+                                            ->count()
+            ];
+        }
+
+        // Laporan per user (top customers)
+        $topCustomers = Order::selectRaw('user_id, nama, COUNT(*) as total_pesanan, SUM(total) as total_nilai_pesanan, SUM(CASE WHEN status = "selesai" THEN total ELSE 0 END) as total_revenue')
+                            ->where('status', '!=', 'dibatalkan')
+                            ->groupBy('user_id', 'nama')
+                            ->orderBy('total_revenue', 'desc')
+                            ->limit(10)
+                            ->get();
+
+        // Detail pesanan terbaru per user
+        $recentOrdersByUser = Order::with('user')
+                                  ->orderBy('created_at', 'desc')
+                                  ->limit(20)
+                                  ->get()
+                                  ->groupBy('user_id');
+
+        return view('petugas.laporan', compact(
+            'totalPesanan',
+            'totalRevenue',
+            'pesananSelesai',
+            'pesananDibatalkan',
+            'bulanIni',
+            'dailyReports',
+            'topCustomers',
+            'recentOrdersByUser'
+        ));
     }
 
     public function produk()

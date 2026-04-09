@@ -427,20 +427,12 @@
                 <div class="product-grid">
                     @foreach($wishlistItems as $item)
                         @php
-                            $imagePath = $item->product->image ?? $item->product->first_image;
-                            if (!empty($imagePath)) {
-                                $cleanPath = ltrim($imagePath, '/');
-                                if (!preg_match('/^(https?:\/\/|\/|uploads\/|produk\/)/', $cleanPath)) {
-                                    $cleanPath = 'uploads/' . $cleanPath;
-                                }
-                                $imageUrl = asset($cleanPath);
-                            } else {
-                                $imageUrl = asset('produk/sepatu1.jpg');
-                            }
+                            $images = is_array($item->product->images) ? $item->product->images : (json_decode($item->product->images, true) ?? []);
+                            $fallbackImage = !empty($images) ? '/uploads/' . $images[0] : ($item->product->image ?? '/produk/sepatu1.jpg');
                         @endphp
                         <div class="product-card">
                             <div class="product-image">
-                                <img src="{{ $imageUrl }}" alt="{{ $item->product->nama }}">
+                                <img src="{{ $fallbackImage }}" alt="{{ $item->product->nama }}">
                             </div>
                             <div class="product-info">
                                 <h4 class="product-name">{{ $item->product->nama }}</h4>

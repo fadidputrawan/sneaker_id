@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class AdminController extends Controller
 {
@@ -349,5 +350,178 @@ class AdminController extends Controller
         })->where('status', 'selesai')->sum('total');
 
         return view('admin.petugas_index', compact('petugas', 'totalProduk', 'totalPesanan', 'totalUser', 'pendapatan'));
+    }
+
+    public function laporan()
+    {
+        // Statistik umum
+        $totalPesanan = Order::count();
+        $totalRevenue = Order::where('status', 'selesai')->sum('total');
+        $pesananSelesai = Order::where('status', 'selesai')->count();
+        $pesananDibatalkan = Order::where('status', 'dibatalkan')->count();
+
+        // Data laporan per periode (bulan ini)
+        $currentMonth = now()->month;
+        $currentYear = now()->year;
+
+        $bulanIni = [
+            'total_pesanan' => Order::whereMonth('created_at', $currentMonth)
+                                   ->whereYear('created_at', $currentYear)
+                                   ->count(),
+            'total_revenue' => Order::where('status', 'selesai')
+                                   ->whereMonth('created_at', $currentMonth)
+                                   ->whereYear('created_at', $currentYear)
+                                   ->sum('total'),
+            'pesanan_selesai' => Order::where('status', 'selesai')
+                                     ->whereMonth('created_at', $currentMonth)
+                                     ->whereYear('created_at', $currentYear)
+                                     ->count(),
+            'pesanan_dibatalkan' => Order::where('status', 'dibatalkan')
+                                        ->whereMonth('created_at', $currentMonth)
+                                        ->whereYear('created_at', $currentYear)
+                                        ->count(),
+            'periode' => 'Bulan ' . now()->format('F Y')
+        ];
+
+        // Data laporan penjualan bulanan (12 bulan terakhir)
+        $salesReports = [];
+        for ($i = 11; $i >= 0; $i--) {
+            $date = now()->subMonths($i);
+            $month = $date->month;
+            $year = $date->year;
+            
+            $salesReports[] = [
+                'periode' => $date->format('F Y'),
+                'bulan_tahun' => $date->format('m/Y'),
+                'total_pesanan' => Order::whereMonth('created_at', $month)
+                                       ->whereYear('created_at', $year)
+                                       ->count(),
+                'total_revenue' => Order::where('status', 'selesai')
+                                       ->whereMonth('created_at', $month)
+                                       ->whereYear('created_at', $year)
+                                       ->sum('total'),
+                'pesanan_selesai' => Order::where('status', 'selesai')
+                                         ->whereMonth('created_at', $month)
+                                         ->whereYear('created_at', $year)
+                                         ->count(),
+                'pesanan_dibatalkan' => Order::where('status', 'dibatalkan')
+                                            ->whereMonth('created_at', $month)
+                                            ->whereYear('created_at', $year)
+                                            ->count()
+            ];
+        }
+
+        // Data laporan harian (7 hari terakhir)
+        $dailyReports = [];
+        for ($i = 6; $i >= 0; $i--) {
+            $date = now()->subDays($i);
+            $dailyReports[] = [
+                'periode' => $date->format('d/m/Y'),
+                'total_pesanan' => Order::whereDate('created_at', $date)->count(),
+                'total_revenue' => Order::where('status', 'selesai')
+                                       ->whereDate('created_at', $date)
+                                       ->sum('total'),
+                'pesanan_selesai' => Order::where('status', 'selesai')
+                                         ->whereDate('created_at', $date)
+                                         ->count(),
+                'pesanan_dibatalkan' => Order::where('status', 'dibatalkan')
+                                            ->whereDate('created_at', $date)
+                                            ->count()
+            ];
+        }
+
+        // Laporan per user (top customers)
+        $topCustomers = Order::selectRaw('user_id, nama, COUNT(*) as total_pesanan, SUM(total) as total_nilai_pesanan, SUM(CASE WHEN status = "selesai" THEN total ELSE 0 END) as total_revenue')
+                            ->where('status', '!=', 'dibatalkan')
+                            ->groupBy('user_id', 'nama')
+                            ->orderBy('total_revenue', 'desc')
+                            ->limit(10)
+                            ->get();
+
+        // Detail pesanan terbaru per user
+        $recentOrdersByUser = Order::with('user')
+                                  ->orderBy('created_at', 'desc')
+                                  ->limit(20)
+                                  ->get()
+                                  ->groupBy('user_id');
+
+        return view('admin.laporan', compact(
+            'totalPesanan',
+            'totalRevenue',
+            'pesananSelesai',
+            'pesananDibatalkan',
+            'bulanIni',
+            'salesReports',
+            'dailyReports',
+            'topCustomers',
+            'recentOrdersByUser'
+        ));
+    }
+
+    public function laporanPenjualanBulanan()
+    {
+        // Data laporan penjualan bulanan (12 bulan terakhir)
+        $salesReports = [];
+        for ($i = 11; $i >= 0; $i--) {
+            $date = now()->subMonths($i);
+            $month = $date->month;
+            $year = $date->year;
+            
+            $salesReports[] = [
+                'periode' => $date->format('F Y'),
+                'bulan_tahun' => $date->format('m/Y'),
+                'total_pesanan' => Order::whereMonth('created_at', $month)
+                                       ->whereYear('created_at', $year)
+                                       ->count(),
+                'total_revenue' => Order::where('status', 'selesai')
+                                       ->whereMonth('created_at', $month)
+                                       ->whereYear('created_at', $year)
+                                       ->sum('total'),
+                'pesanan_selesai' => Order::where('status', 'selesai')
+                                         ->whereMonth('created_at', $month)
+                                         ->whereYear('created_at', $year)
+                                         ->count(),
+                'pesanan_dibatalkan' => Order::where('status', 'dibatalkan')
+                                            ->whereMonth('created_at', $month)
+                                            ->whereYear('created_at', $year)
+                                            ->count()
+            ];
+        }
+
+        return view('admin.laporan-penjualan-bulanan', compact('salesReports'));
+    }
+
+    public function downloadLaporanPenjualanPdf()
+    {
+        // Data laporan penjualan bulanan (12 bulan terakhir)
+        $salesReports = [];
+        for ($i = 11; $i >= 0; $i--) {
+            $date = now()->subMonths($i);
+            $month = $date->month;
+            $year = $date->year;
+            
+            $salesReports[] = [
+                'periode' => $date->format('F Y'),
+                'bulan_tahun' => $date->format('m/Y'),
+                'total_pesanan' => Order::whereMonth('created_at', $month)
+                                       ->whereYear('created_at', $year)
+                                       ->count(),
+                'total_revenue' => Order::where('status', 'selesai')
+                                       ->whereMonth('created_at', $month)
+                                       ->whereYear('created_at', $year)
+                                       ->sum('total'),
+                'pesanan_selesai' => Order::where('status', 'selesai')
+                                         ->whereMonth('created_at', $month)
+                                         ->whereYear('created_at', $year)
+                                         ->count(),
+                'pesanan_dibatalkan' => Order::where('status', 'dibatalkan')
+                                            ->whereMonth('created_at', $month)
+                                            ->whereYear('created_at', $year)
+                                            ->count()
+            ];
+        }
+
+        $pdf = Pdf::loadView('admin.laporan-penjualan-pdf', compact('salesReports'));
+        return $pdf->download('Laporan-Penjualan-Bulanan-' . now()->format('d-m-Y') . '.pdf');
     }
 }

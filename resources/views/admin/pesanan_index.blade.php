@@ -49,6 +49,7 @@
 			<a href="{{ route('admin.pesanan.index') }}" class="{{ request()->is('admin/pesanan*') ? 'active' : '' }}">Kelola Pesanan</a>
 			<a href="{{ route('admin.user.index') }}" class="{{ request()->is('admin/user*') ? 'active' : '' }}">Kelola User</a>
 			<a href="{{ route('admin.petugas.index') }}" class="{{ request()->is('admin/petugas*') ? 'active' : '' }}">Kelola Petugas</a>
+			<a href="{{ route('admin.laporan-penjualan-bulanan') }}" class="{{ request()->routeIs('admin.laporan-penjualan-bulanan') ? 'active' : '' }}">Laporan Penjualan</a>
 		</div>
 	</div>
 

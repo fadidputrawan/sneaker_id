@@ -290,13 +290,13 @@
         @forelse($products as $product)
         @php
             $images = is_array($product->images) ? $product->images : (json_decode($product->images, true) ?? []);
-            $fallbackImage = !empty($images) ? 'uploads/' . $images[0] : ($product->image ?? 'produk/sepatu1.jpg');
+            $fallbackImage = !empty($images) ? '/uploads/' . $images[0] : ($product->image ?? '/produk/sepatu1.jpg');
         @endphp
         <div class="col-md-3 mb-4 product-card" data-brand="{{ $product->brand }}">
             <div style="position: relative;">
                 <a href="{{ route('product.show', $product->id) }}" style="text-decoration: none; color: inherit;">
                     <div class="card" style="cursor: pointer; height: 100%;">
-                        <img src="{{ asset($fallbackImage) }}" alt="{{ $product->nama }}">
+                        <img src="{{ $fallbackImage }}" alt="{{ $product->nama }}">
                         <div class="card-body">
                             <h6>{{ $product->nama }}</h6>
                             <p>Rp {{ number_format($product->harga, 0, ',', '.') }}</p>

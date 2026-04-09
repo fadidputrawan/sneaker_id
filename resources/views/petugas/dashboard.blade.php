@@ -148,6 +148,32 @@
             text-decoration:none;
         }
 
+        .btn-download{
+            display:inline-flex;
+            align-items:center;
+            gap:8px;
+            background:#2563eb;
+            color:white;
+            padding:10px 16px;
+            border-radius:6px;
+            text-decoration:none;
+            font-size:14px;
+            font-weight:600;
+            transition:0.3s;
+            border:none;
+            cursor:pointer;
+        }
+
+        .btn-download:hover{
+            background:#1d4ed8;
+            transform:translateY(-2px);
+            box-shadow:0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .btn-download i{
+            font-size:16px;
+        }
+
         tr:hover{
             background:#f9f9f9;
         }
@@ -226,7 +252,12 @@
         <!-- TABEL -->
         @if($transaksiTerbaru->isNotEmpty())
         <div class="table-box">
-            <h4>Transaksi Terbaru</h4>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h4>Transaksi Terbaru</h4>
+                <a href="{{ route('petugas.download-transaksi-pdf') }}" class="btn-download">
+                    <i class="bi bi-download"></i> Download PDF
+                </a>
+            </div>
 
             <table>
                 <thead>

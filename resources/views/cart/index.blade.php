@@ -541,9 +541,9 @@
                             <div class="cart-item-image">
                                 @php
                                     $images = is_array($item->product->images) ? $item->product->images : (json_decode($item->product->images, true) ?? []);
-                                    $imagePath = !empty($images) ? 'uploads/' . $images[0] : ($item->product->image ?? 'produk/sepatu1.jpg');
+                                    $imagePath = !empty($images) ? '/uploads/' . $images[0] : ($item->product->image ?? '/produk/sepatu1.jpg');
                                 @endphp
-                                <img src="{{ asset($imagePath) }}" alt="{{ $item->product->nama }}">
+                                <img src="{{ $imagePath }}" alt="{{ $item->product->nama }}">
                             </div>
 
                             <div class="cart-item-details">
